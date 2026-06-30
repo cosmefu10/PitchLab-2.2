@@ -3,1142 +3,744 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PitchLab v2 — Phonetics Practice Tool</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="description" content="PitchLab — an English intonation visualizer. Record or load audio and watch the pitch (F0) contour in real time to train your ear. A mirror, not a judge.">
+<meta name="author" content="ZekesLab">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0d12">
+<title>PitchLab — Smoothing Lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M25 9h14M27 9v13.5L15 44.5a5 5 0 0 0 4.4 7.5h25.2a5 5 0 0 0 4.4-7.5L37 22.5V9' fill='none' stroke='%239a6cf0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0e1a;--panel:#111827;--border:#1f2d45;--accent:#00e5ff;--red:#ff6b6b;--green:#a8ff78;--orange:#ffb347;--text:#e2e8f0;--muted:#64748b;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
-header{padding:13px 26px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.97);position:sticky;top:0;z-index:100;}
-.logo{font-family:'Space Mono',monospace;font-size:1.15rem;font-weight:700;color:var(--accent);letter-spacing:-1px;}
-.logo span{color:var(--text);}
-.badge{font-family:'Space Mono',monospace;font-size:.55rem;background:var(--accent);color:#000;padding:2px 7px;border-radius:2px;letter-spacing:1px;font-weight:700;}
-.hstatus{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:.72rem;color:var(--muted);font-family:'Space Mono',monospace;}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .3s;}
-.dot.on{background:var(--green);box-shadow:0 0 7px var(--green);animation:blink 1s infinite;}
-.dot.rec{background:var(--red);box-shadow:0 0 7px var(--red);animation:blink .6s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-#alertBar{display:none;padding:9px 26px;font-family:'Space Mono',monospace;font-size:.7rem;border-bottom:1px solid;gap:9px;align-items:center;}
-#alertBar.warn{background:rgba(255,179,71,.1);border-color:rgba(255,179,71,.4);color:var(--orange);display:flex;}
-#alertBar.err{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.4);color:var(--red);display:flex;}
-#alertBar.ok{background:rgba(168,255,120,.1);border-color:rgba(168,255,120,.4);color:var(--green);display:flex;}
-main{flex:1;padding:18px 26px;display:flex;flex-direction:column;gap:14px;max-width:1500px;margin:0 auto;width:100%;}
-.tabs{display:flex;gap:3px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:3px;width:fit-content;}
-.tab{font-family:'Space Mono',monospace;font-size:.67rem;font-weight:700;letter-spacing:.5px;padding:6px 16px;border-radius:4px;cursor:pointer;color:var(--muted);border:none;background:transparent;transition:all .15s;}
-.tab.active{background:var(--accent);color:#000;}
-.tab:hover:not(.active){color:var(--text);}
-.panel{display:none;flex-direction:column;gap:13px;}
-.panel.active{display:flex;}
-.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
-.btn{font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:.5px;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
-.bp{background:var(--accent);color:#000;}.bp:hover{background:#33ecff;transform:translateY(-1px);}.bp:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none;}
-.bd{background:var(--red);color:#fff;}.bd:hover{background:#ff8a8a;transform:translateY(-1px);}.bd:disabled{opacity:.4;cursor:not-allowed;}
-.bg{background:transparent;color:var(--muted);border:1px solid var(--border);}.bg:hover{border-color:var(--accent);color:var(--accent);}.bg:disabled{opacity:.4;cursor:not-allowed;}
-.bref{background:rgba(255,107,107,.12);color:var(--red);border:1px solid rgba(255,107,107,.3);border-style:dashed;}.bref:hover{background:rgba(255,107,107,.22);}
-.bsave{background:rgba(168,255,120,.12);color:var(--green);border:1px solid rgba(168,255,120,.3);}.bsave:hover{background:rgba(168,255,120,.22);}
-.upload{border:1.5px dashed var(--border);border-radius:6px;padding:9px 16px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:all .2s;font-size:.78rem;color:var(--muted);}
-.upload:hover{border-color:var(--accent);color:var(--accent);}
+:root{--bg:#0a0d12;--panel:#111620;--panel2:#161c28;--border:#1e2a38;--border2:#2a3a4a;--cyan:#00e5ff;--text:#dde6ee;--text2:#8a96b0;--text3:#4a5568;--green:#39ff14;--amber:#ffb300;--pink:#ff4081;--purple:#a78bfa;--red:#ff6b6b;--mono:'Space Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* HEADER */
+header{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;background:rgba(10,13,18,.97);backdrop-filter:blur(12px);z-index:100;}
+.logo-icon{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{width:34px;height:34px;}
+.logo-name{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1.1;}
+.logo-name span{color:var(--cyan);}
+.logo-block{display:flex;flex-direction:column;}
+.logo-tag{font-family:var(--mono);font-size:.54rem;font-weight:400;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;}
+.tabs{display:flex;gap:2px;margin-left:8px;}
+.tab{font-family:var(--mono);font-size:.74rem;font-weight:700;padding:8px 18px;border:none;background:transparent;color:var(--text3);cursor:pointer;border-radius:6px;transition:all .15s;}
+.tab:hover{color:var(--text2);}
+.tab.active{background:var(--panel2);color:var(--cyan);}
+.hint{margin-left:auto;font-size:.68rem;color:var(--text3);font-family:var(--mono);}
+
+main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
+
+/* CONTROLS */
+.controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px;}
+.upload{border:1.5px dashed var(--border2);border-radius:5px;padding:9px 15px;display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:.7rem;font-weight:700;color:var(--text2);transition:all .15s;}
+.upload:hover{border-color:var(--cyan);color:var(--cyan);}
 .upload input{display:none;}
-.srow{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-left:auto;}
-.sett{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace;}
-.sett input[type=range]{-webkit-appearance:none;width:68px;height:3px;background:var(--border);border-radius:2px;outline:none;}
-.sett input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--accent);cursor:pointer;}
-.sett span{min-width:40px;color:var(--accent);text-align:right;}
-/* Players */
-.prow{display:flex;flex-direction:column;gap:9px;}
-.pcard{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:12px 15px;display:flex;flex-direction:column;gap:9px;}
-.pcard.ref{border-color:rgba(255,107,107,.3);}
-.pcard.mine{border-color:rgba(0,229,255,.2);}
-.plbl{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:7px;}
-.pdot{width:7px;height:7px;border-radius:50%;}
-.pctrl{display:flex;align-items:center;gap:9px;}
-.pbtn{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
-.pbtn:disabled{opacity:.3;cursor:not-allowed;}
-.pbtn.r{background:rgba(255,107,107,.18);color:var(--red);}.pbtn.r:hover:not(:disabled){background:rgba(255,107,107,.35);}
-.pbtn.b{background:rgba(0,229,255,.12);color:var(--accent);}.pbtn.b:hover:not(:disabled){background:rgba(0,229,255,.28);}
-.ptrack{flex:1;height:4px;background:var(--border);border-radius:2px;cursor:pointer;}
-.pfill{height:100%;border-radius:2px;transition:width .1s linear;}
-.ptlbl{font-family:'Space Mono',monospace;font-size:.63rem;color:var(--muted);min-width:50px;text-align:right;}
-.fname{font-size:.73rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;}
-.noaudio{font-size:.73rem;color:var(--muted);font-style:italic;}
-/* Viz */
-.viz{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:340px;}
-.vh{padding:9px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:13px;font-family:'Space Mono',monospace;font-size:.65rem;color:var(--muted);flex-wrap:wrap;}
-.vt{font-weight:700;color:var(--text);letter-spacing:1px;font-size:.62rem;}
-.vleg{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap;}
-.li{display:flex;align-items:center;gap:5px;}
-.ld{width:7px;height:7px;border-radius:50%;}
-.cw{flex:1;position:relative;display:flex;}
-.ya{width:50px;flex-shrink:0;border-right:1px solid var(--border);background:rgba(0,0,0,.2);position:relative;}
-.ca{flex:1;position:relative;overflow:hidden;}
-/* ONE canvas fills the area */
-.ca canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.ya canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.ws{height:68px;border-top:1px solid var(--border);display:flex;background:rgba(0,0,0,.3);margin-left:50px;}
-.wh{flex:1;position:relative;}
-.wh+.wh{border-left:1px solid var(--border);}.ws-stacked{flex-direction:column;height:100px;}.ws-stacked .wh{flex:1;}.ws-stacked .wh+.wh{border-left:none;border-top:1px solid var(--border);}
-.wlbl{position:absolute;top:4px;left:7px;font-family:'Space Mono',monospace;font-size:.56rem;z-index:2;pointer-events:none;}
-.wh canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.xs{height:25px;border-top:1px solid var(--border);margin-left:50px;background:rgba(0,0,0,.2);}
-.xs canvas{width:100%;height:100%;display:block;}
-.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--muted);font-size:.8rem;pointer-events:none;z-index:2;}
-.eicon{font-size:2rem;opacity:.22;}
-.pbar{width:100%;height:2px;background:var(--border);overflow:hidden;display:none;}
-.pfillbar{height:100%;background:var(--accent);width:0%;transition:width .08s;}
+.sett{display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--text2);font-family:var(--mono);}
+.sett.right{margin-left:auto;}
+.sett input[type=range]{-webkit-appearance:none;appearance:none;width:62px;height:3px;background:var(--border2);border-radius:2px;outline:none;}
+.sett input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;background:var(--cyan);cursor:pointer;}
+.sett input[type=range]::-moz-range-thumb{width:12px;height:12px;border:none;border-radius:50%;background:var(--cyan);cursor:pointer;}
+.sett span{color:var(--cyan);min-width:42px;}
 
-/* Compare results */
-.cpanel{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:15px 18px;display:none;}
-.cpanel.show{display:block;}
-.cptitle{font-family:'Space Mono',monospace;font-size:.62rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:13px;}
-.simrow{margin-bottom:13px;}
-.simlbl{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);margin-bottom:5px;}
-.simval{color:var(--accent);font-size:1.05rem;font-weight:700;}
-.simbar{height:7px;background:var(--border);border-radius:4px;overflow:hidden;}
-.simfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),var(--orange),var(--green));transition:width .8s ease;}
-.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px;}
-.cs{background:rgba(0,0,0,.22);border-radius:5px;padding:9px 13px;}
-.cslbl{font-family:'Space Mono',monospace;font-size:.56rem;color:var(--muted);letter-spacing:1px;margin-bottom:3px;}
-.csval{font-family:'Space Mono',monospace;font-size:.95rem;font-weight:700;color:var(--accent);}
-.fb{margin-top:13px;font-size:.8rem;color:var(--text);line-height:1.65;padding:11px 15px;background:rgba(0,229,255,.05);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;}
-/* History */
-.hpanel{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:15px 18px;}
-.htitle{font-family:'Space Mono',monospace;font-size:.62rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:11px;display:flex;align-items:center;gap:9px;}
-.hlist{display:flex;flex-direction:column;gap:7px;}
-.hitem{display:flex;align-items:center;gap:11px;padding:9px 13px;background:rgba(0,0,0,.18);border-radius:5px;border:1px solid var(--border);}
-.hnum{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--muted);width:20px;}
-.hbw{flex:1;}
-.hbb{height:4px;background:var(--border);border-radius:2px;}
-.hbf{height:100%;border-radius:2px;}
-.hscore{font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;min-width:42px;text-align:right;}
-.hpat{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);min-width:78px;}
-.hbtn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;padding:2px 5px;}
-.hbtn:hover{color:var(--red);}
-.hempty{font-size:.78rem;color:var(--muted);font-style:italic;}
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px;}
-.sc{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:11px 15px;}
-.slbl{font-family:'Space Mono',monospace;font-size:.57rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
-.sval{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--accent);line-height:1;}
-.su{font-size:.63rem;color:var(--muted);margin-left:3px;}
-/* Help */
-.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:11px;}
-.hcard{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:13px 15px;}
-.hctitle{font-family:'Space Mono',monospace;font-size:.63rem;font-weight:700;letter-spacing:1px;margin-bottom:7px;}
-.hcbody{font-size:.76rem;color:var(--muted);line-height:1.6;}
-.hcurve{font-size:1.3rem;margin-bottom:5px;}
+.pbar{height:2px;background:var(--border);overflow:hidden;display:none;margin-bottom:14px;border-radius:2px;}
+.pfill{height:100%;background:var(--cyan);width:0%;transition:width .08s;}
 
-/* ── Stats bar ── */
-.statsbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:14px 20px;}
-.patdisplay{display:flex;align-items:center;gap:12px;flex:1;min-width:200px;}
-.paticon{font-size:2rem;line-height:1;}
-.patname{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;color:var(--text);letter-spacing:.5px;}
-.statmini{display:flex;gap:20px;flex-wrap:wrap;}
-.sm{display:flex;flex-direction:column;gap:3px;}
-.smlbl{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:1px;color:var(--muted);}
-.smval{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent);}
+/* PLAYER */
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,107,.5);}70%{box-shadow:0 0 0 8px rgba(255,107,107,0);}100%{box-shadow:0 0 0 0 rgba(255,107,107,0);}}
+.player{display:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:11px 16px;margin-bottom:14px;align-items:center;gap:11px;}
+.player.show{display:flex;}
+.player .plabel{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.5px;color:var(--text3);min-width:74px;}
+/* wide text+icon buttons (Segmental Lab style) */
+.btn{font-family:'Inter',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;border-radius:9px;padding:9px 15px;display:flex;align-items:center;gap:8px;transition:all .15s;border:1px solid transparent;flex-shrink:0;}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.btn svg{width:14px;height:14px;display:block;flex-shrink:0;}
+.btn-rec{background:var(--red);color:#1a0606;box-shadow:0 6px 18px -8px var(--red);}
+.btn-rec:hover:not(:disabled){filter:brightness(1.08);}
+.btn-rec.live{background:#2a1012;color:var(--red);border-color:var(--red);}
+.btn-rec:disabled{opacity:.4;cursor:not-allowed;}
+.btn-rec .dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.btn-rec.live .dot{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.btn-play{background:var(--panel2);color:var(--text);border-color:var(--border2);}
+.btn-play:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+.btn-play:disabled{opacity:.4;cursor:not-allowed;}
+.ptrack{flex:1;height:6px;background:var(--border2);border-radius:3px;cursor:pointer;min-width:60px;}
+.pfillbar{height:100%;border-radius:3px;width:0%;transition:width .05s linear;}
+.ptime{font-family:var(--mono);font-size:.68rem;color:var(--text2);min-width:80px;text-align:right;}
 
+/* GRAPH STACK */
+.stack{display:flex;flex-direction:column;gap:13px;}
+/* GRAPH CARD */
+.card{background:var(--panel);border:2px solid var(--border);border-radius:9px;overflow:hidden;display:flex;flex-direction:column;}
+.chead{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;background:var(--panel2);}
+.chead-main{flex:1;min-width:0;}
+.cname{font-family:var(--mono);font-size:.76rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.cidea{font-size:.66rem;color:var(--cyan);font-weight:600;}
+.cv-area{position:relative;height:312px;}
+.cv-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+.cv-area canvas.sel-layer{cursor:crosshair;z-index:3;}
+.ov-area{position:relative;height:54px;border-top:1px solid var(--border);background:#0b0e14;}
+.ov-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;}
+.seltools{display:none;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border);background:var(--panel2);font-family:var(--mono);font-size:.66rem;color:var(--text2);}
+.seltools.show{display:flex;}
+.seltools .selinfo{color:var(--cyan);}
+.seltools button{font-family:var(--mono);font-size:.62rem;font-weight:700;padding:5px 12px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;}
+.seltools button:hover{border-color:var(--cyan);color:var(--cyan);}
+.seltools button.primary{background:var(--cyan);color:#000;border-color:var(--cyan);}
+.seltools button.primary:hover{background:#5af0ff;}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.78rem;z-index:2;text-align:center;padding:0 20px;}
+.stats{padding:6px 14px;border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:.58rem;color:var(--text3);}
+.stats b{color:var(--cyan);font-weight:700;}
 
-.playhead{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,0.7);box-shadow:0 0 6px rgba(255,255,255,0.4);pointer-events:none;display:none;z-index:10;transform:translateX(-1px);}
-/* Tutorial */
-.tut-hero{display:flex;flex-direction:column;align-items:center;gap:18px;padding:30px 20px;text-align:center;}
-.tut-badge{font-family:'Space Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:2px;background:rgba(0,229,255,.12);color:var(--accent);border:1px solid rgba(0,229,255,.3);border-radius:20px;padding:4px 14px;}
-.tut-title{font-family:'Space Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--text);}
-.tut-sub{font-size:.88rem;color:var(--muted);max-width:480px;line-height:1.6;}
-.tut-video-placeholder{width:100%;max-width:560px;aspect-ratio:16/9;background:var(--panel);border:2px dashed var(--border);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
-.tut-play-icon{font-size:2.5rem;color:var(--border);}
-.tut-video-label{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);}
-.tut-steps{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;text-align:left;}
-.tut-step{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:12px 16px;}
-.tut-step-num{font-family:'Space Mono',monospace;font-size:.65rem;font-weight:700;color:var(--accent);min-width:24px;margin-top:1px;}
-.tut-step-text{font-size:.82rem;color:var(--muted);line-height:1.55;}
-.tut-step-text b{color:var(--text);}
-.tut-contact{font-size:.78rem;color:var(--muted);}
-.tut-contact a{color:var(--accent);text-decoration:none;}
-.tut-contact a:hover{text-decoration:underline;}
-/* tooltip */
-#tt{position:fixed;background:rgba(10,14,26,.97);border:1px solid var(--accent);border-radius:4px;padding:6px 10px;font-family:'Space Mono',monospace;font-size:.67rem;color:var(--accent);pointer-events:none;display:none;z-index:999;white-space:nowrap;}
+/* COMPARE legend + score */
+.cmp-legend{display:flex;gap:18px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:11px 16px;margin-bottom:14px;flex-wrap:wrap;}
+.live-btn{font-family:var(--mono);font-size:.66rem;font-weight:700;padding:7px 14px;border:1px solid var(--border2);border-radius:5px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;}
+.live-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.live-btn.on{background:var(--red);color:#fff;border-color:var(--red);animation:pulse 1.1s infinite;}
+.miclevel{width:14px;height:14px;display:flex;align-items:center;justify-content:center;opacity:.3;transition:opacity .2s;}
+.miclevel.on{opacity:1;}
+.miclevel-bar{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);transform:scale(.6);transform-origin:center;will-change:transform;}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:.74rem;font-family:var(--mono);color:var(--text2);}
+.leg-dot{width:12px;height:3px;border-radius:2px;}
+
+.panel{display:none;}
+.panel.active{display:block;}
+.footer{padding:26px 22px 40px;}
+.about{max-width:560px;margin:0 auto;text-align:center;border-top:1px solid var(--border);padding-top:22px;}
+.about-title{font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:10px;}
+.about p{color:var(--text2);font-size:.78rem;line-height:1.6;margin:0 0 8px;}
+.about a{color:var(--cyan);text-decoration:none;}
+.about a:hover{text-decoration:underline;}
+.about-credit{font-family:var(--mono);font-size:.64rem;color:var(--text3);margin-top:12px;}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">Pitch<span>Lab</span></div>
-  <div class="badge">BETA</div>
-  <div style="font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace;display:none" class="hdesktop">PHONETICS TOOL</div>
-  <div class="hstatus">
-    <div class="dot" id="sdot"></div><span id="stxt">READY</span>
-    <span style="color:var(--border);margin:0 4px">|</span>
-    <a href="mailto:kumaslab10@gmail.com" style="font-size:.65rem;color:var(--muted);text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:.3px;" title="Feedback &amp; suggestions">✉ feedback</a>
+  <div class="logo-icon">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs><linearGradient id="plGrad" x1="12" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#5aa9ff"/><stop offset="0.5" stop-color="#9a6cf0"/><stop offset="1" stop-color="#e84fc4"/>
+      </linearGradient></defs>
+      <path d="M25 9h14M27 9v13.5L15 44.5a5 5 0 0 0 4.4 7.5h25.2a5 5 0 0 0 4.4-7.5L37 22.5V9" stroke="url(#plGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <g stroke-linecap="round" stroke-width="2">
+        <line x1="20" y1="40" x2="20" y2="44" stroke="#5aa9ff"/><line x1="24" y1="36" x2="24" y2="48" stroke="#6f8df0"/>
+        <line x1="28" y1="31" x2="28" y2="53" stroke="#9a6cf0"/><line x1="32" y1="27" x2="32" y2="49" stroke="#b95fde"/>
+        <line x1="36" y1="34" x2="36" y2="44" stroke="#d653ce"/><line x1="40" y1="38" x2="40" y2="46" stroke="#e84fc4"/>
+        <line x1="44" y1="41" x2="44" y2="43" stroke="#e84fc4"/>
+      </g>
+    </svg>
   </div>
+  <div class="logo-block">
+    <div class="logo-name">Pitch<span>Lab</span></div>
+    <div class="logo-tag">Visualize • Compare • Learn</div>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Analysis mode">
+    <button class="tab active" data-tab="analyze" role="tab" aria-selected="true">Analyze</button>
+    <button class="tab" data-tab="compare" role="tab" aria-selected="false">Compare</button>
+  </div>
+  <div class="hint">English intonation visualizer</div>
 </header>
 
-<div id="alertBar"><span id="aicon">⚠</span><span id="amsg"></span><span style="margin-left:auto;cursor:pointer;opacity:.6" onclick="hideAlert()">✕</span></div>
-
 <main>
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px;">
-    <div class="tabs">
-      <button class="tab active" onclick="tab('analyze')">ANALYZE</button>
-      <button class="tab" onclick="tab('compare')">COMPARE</button>
-      <button class="tab" onclick="tab('history')">HISTORY</button>
-      <button class="tab" onclick="tab('help')">HELP</button>
-      <button class="tab" onclick="tab('tutorial')">TUTORIAL</button>
-    </div>
+  <!-- shared controls -->
+  <div class="controls">
+    <div class="sett">F0 min<input type="range" id="fMin" min="50" max="150" value="90" step="5" aria-label="Minimum F0"><span id="fMinV">90Hz</span></div>
+    <div class="sett">F0 max<input type="range" id="fMax" min="200" max="500" value="300" step="10" aria-label="Maximum F0"><span id="fMaxV">300Hz</span></div>
+    <div class="sett right">Window<input type="range" id="winSec" min="1.5" max="6" value="2" step="0.5" aria-label="Window length"><span id="winSecV">2.0s</span></div>
+  </div>
+  <div class="pbar" id="pb"><div class="pfill" id="pf"></div></div>
 
+  <!-- ANALYZE PANEL -->
+  <div class="panel active" id="panel-analyze">
+    <div class="player show" id="anPlayer">
+      <span class="plabel">YOUR AUDIO</span>
+      <button class="btn btn-rec" id="anRecBtn" title="Record" aria-label="Record audio"><span class="dot"></span><span id="anRecTxt">Record</span></button>
+      <div class="miclevel" id="micLevelAn" title="Microphone level"><div class="miclevel-bar" id="micBarAn"></div></div>
+      <button class="btn btn-play" id="anPlayBtn" onclick="togglePlay('an')" disabled title="Play" aria-label="Play audio"><svg id="anPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="anPlayTxt">Play</span></button>
+      <label class="upload" style="margin:0"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load<input type="file" id="anFile" accept="audio/*"></label>
+      <div class="ptrack" onclick="seek('an',event)"><div class="pfillbar" id="anFill" style="background:var(--cyan)"></div></div>
+      <span class="ptime" id="anTime">0:00 / 0:00</span>
+    </div>
+    <div class="stack" id="anStack"></div>
   </div>
 
-  <!-- ══ ANALYZE ══ -->
-  <div class="panel active" id="pAnalyze">
-    <div class="row">
-      <button class="btn bp" id="bRec"><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>RECORD</button>
-      <button class="btn bd" id="bStop" disabled><svg width="9" height="9" viewBox="0 0 10 10"><rect width="10" height="10" fill="currentColor"/></svg>STOP</button>
-      <label class="upload"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load audio<input type="file" id="fAnal" accept="audio/*"></label>
-      <button class="btn bg" id="bClr" disabled>CLEAR</button>
-      <div class="srow">
-        <div class="sett"><label>F0 min:</label><input type="range" id="fMin" min="50" max="300" value="75" step="5"><span id="fMinV">75 Hz</span></div>
-        <div class="sett"><label>F0 max:</label><input type="range" id="fMax" min="200" max="800" value="500" step="10"><span id="fMaxV">500 Hz</span></div>
-      </div>
+  <!-- COMPARE PANEL -->
+  <div class="panel" id="panel-compare">
+    <div class="player show" id="refPlayer">
+      <span class="plabel" style="color:var(--red)">REFERENCE</span>
+      <button class="btn btn-play" id="refPlayBtn" onclick="togglePlay('ref')" disabled title="Play reference" aria-label="Play reference"><svg id="refPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="refPlayTxt">Play</span></button>
+      <label class="upload" style="margin:0"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load reference<input type="file" id="refFile" accept="audio/*"></label>
+      <div class="ptrack" onclick="seek('ref',event)"><div class="pfillbar" id="refFill" style="background:var(--red)"></div></div>
+      <span class="ptime" id="refTime">0:00 / 0:00</span>
     </div>
-    <!-- player -->
-    <div class="prow">
-      <div class="pcard mine">
-        <div class="plbl"><div class="pdot" style="background:var(--accent)"></div>YOUR RECORDING<span id="anFname" class="noaudio" style="margin-left:auto">no audio</span></div>
-        <div class="pctrl">
-          <button class="pbtn b" id="pAnBtn" disabled onclick="play('an')"><svg id="pAnIco" width="12" height="12" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9" fill="currentColor"/></svg></button>
-          <div class="ptrack" onclick="seek('an',event)"><div class="pfill" id="pAnFill" style="width:0%;background:var(--accent)"></div></div>
-          <span class="ptlbl" id="pAnTime">0:00</span>
-        </div>
-      </div>
+    <div class="player show" id="recPlayer">
+      <span class="plabel" style="color:var(--cyan)">YOUR VOICE</span>
+      <button class="btn btn-rec" id="recRecBtn" title="Record your voice" aria-label="Record your voice"><span class="dot"></span><span id="recRecTxt">Record</span></button>
+      <button class="btn btn-play" id="recPlayBtn" onclick="togglePlay('rec')" disabled title="Play your voice" aria-label="Play your voice"><svg id="recPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="recPlayTxt">Play</span></button>
+      <div class="ptrack" onclick="seek('rec',event)"><div class="pfillbar" id="recFill" style="background:var(--cyan)"></div></div>
+      <span class="ptime" id="recTime">0:00 / 0:00</span>
     </div>
-    <div class="pbar" id="pb1"><div class="pfillbar" id="pf1"></div></div>
-    <!-- viz -->
-    <div class="viz">
-      <div class="vh"><div class="vt">PITCH CONTOUR — F0</div>
-        <div class="vleg">
-          <div class="li"><div class="ld" style="background:var(--accent)"></div><span>Your voice</span></div>
-          <div class="li"><div class="ld" style="background:var(--red)"></div><span>Mean F0</span></div>
-        </div>
-      </div>
-      <div class="cw">
-        <div class="ya"><canvas id="yA"></canvas></div>
-        <div class="ca" id="caA">
-          <canvas id="cA"></canvas>
-          <div class="playhead" id="phA"></div>
-          <div class="empty" id="emA"><div class="eicon">🎙</div><span>Record or load audio to analyze pitch</span></div>
-        </div>
-      </div>
-      <div class="ws"><div class="wh"><span class="wlbl" style="color:rgba(0,229,255,.5)">WAVEFORM</span><canvas id="wA"></canvas></div></div>
-      <div class="xs"><canvas id="xA"></canvas></div>
+    <div class="cmp-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>Reference</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--cyan)"></div>Your voice</div>
+      <button class="live-btn" id="liveBtn" title="Practise live against the reference">● Live practice</button>
+      <div class="miclevel" id="micLevel" title="Microphone level"><div class="miclevel-bar" id="micBar"></div></div>
     </div>
-
-    <!-- stats -->
-    <div class="statsbar">
-      <div class="patdisplay" id="patDisplay">
-        <span class="paticon" id="patIcon">—</span>
-        <span class="patname" id="patName">No analysis yet</span>
-      </div>
-      <div class="statmini">
-        <div class="sm"><div class="smlbl">DURATION</div><div class="smval" id="sDur">—<span class="su">s</span></div></div>
-        <div class="sm"><div class="smlbl">PITCH RANGE</div><div class="smval" id="sRng">—<span class="su">st</span></div></div>
-        <div class="sm"><div class="smlbl">EXPRESSIVENESS</div><div class="smval" id="sExpr">—</div></div>
-      </div>
-    </div>
+    <div class="stack" id="cmpStack"></div>
   </div>
-
-  <!-- ══ COMPARE ══ -->
-  <div class="panel" id="pCompare">
-    <div class="row">
-      <label class="upload bref" style="border-radius:4px">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        Load REFERENCE audio<input type="file" id="fRef" accept="audio/*">
-      </label>
-      <button class="btn bp" id="bRecCmp"><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>RECORD MY VOICE</button>
-      <button class="btn bd" id="bStopCmp" disabled><svg width="9" height="9" viewBox="0 0 10 10"><rect width="10" height="10" fill="currentColor"/></svg>STOP</button>
-      <button class="btn bg" id="bClrCmp" disabled>CLEAR ALL</button>
-      <button class="btn bsave" id="bSave" disabled>+ SAVE ATTEMPT</button>
-    </div>
-    <div class="prow">
-      <div class="pcard ref">
-        <div class="plbl"><div class="pdot" style="background:var(--red)"></div>REFERENCE<span id="refFname" class="noaudio" style="margin-left:auto">no audio</span></div>
-        <div class="pctrl">
-          <button class="pbtn r" id="pRefBtn" disabled onclick="play('ref')"><svg id="pRefIco" width="12" height="12" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9" fill="currentColor"/></svg></button>
-          <div class="ptrack" onclick="seek('ref',event)"><div class="pfill" id="pRefFill" style="width:0%;background:var(--red)"></div></div>
-          <span class="ptlbl" id="pRefTime">0:00</span>
-        </div>
-      </div>
-      <div class="pcard mine">
-        <div class="plbl"><div class="pdot" style="background:var(--accent)"></div>YOUR VOICE<span id="recFname" class="noaudio" style="margin-left:auto">no audio</span></div>
-        <div class="pctrl">
-          <button class="pbtn b" id="pRecBtn" disabled onclick="play('rec')"><svg id="pRecIco" width="12" height="12" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9" fill="currentColor"/></svg></button>
-          <div class="ptrack" onclick="seek('rec',event)"><div class="pfill" id="pRecFill" style="width:0%;background:var(--accent)"></div></div>
-          <span class="ptlbl" id="pRecTime">0:00</span>
-        </div>
-      </div>
-    </div>
-    <div class="pbar" id="pb2"><div class="pfillbar" id="pf2"></div></div>
-    <!-- SINGLE compare viz -->
-    <div class="viz">
-      <div class="vh"><div class="vt">PITCH COMPARISON</div>
-        <div class="vleg">
-          <div class="li"><div class="ld" style="background:var(--red)"></div><span>Reference</span></div>
-          <div class="li"><div class="ld" style="background:var(--accent)"></div><span>Your voice</span></div>
-        </div>
-      </div>
-      <div class="cw">
-        <div class="ya"><canvas id="yC"></canvas></div>
-        <div class="ca" id="caC">
-          <canvas id="cC"></canvas>
-          <div class="playhead" id="phC"></div>
-          <div class="empty" id="emC"><div class="eicon">📊</div><span>Load a reference and record your voice</span></div>
-        </div>
-      </div>
-      <div class="ws ws-stacked">
-        <div class="wh"><span class="wlbl" style="color:rgba(255,107,107,.6)">REF</span><canvas id="wRef"></canvas></div>
-        <div class="wh"><span class="wlbl" style="color:rgba(0,229,255,.5)">YOUR VOICE</span><canvas id="wRec"></canvas></div>
-      </div>
-      <div class="xs"><canvas id="xC"></canvas></div>
-    </div>
-
-    <!-- compare results -->
-    <div class="cpanel" id="cpanel">
-      <div class="cptitle">COMPARISON RESULT</div>
-      <div class="simrow">
-        <div class="simlbl"><span>Contour similarity</span><span class="simval" id="simScore">—</span></div>
-        <div class="simbar"><div class="simfill" id="simFill" style="width:0%"></div></div>
-      </div>
-      <div class="cstats">
-        <div class="cs"><div class="cslbl">REF PATTERN</div><div class="csval" id="cRefPat" style="font-size:1.1rem">—</div></div>
-        <div class="cs"><div class="cslbl">YOUR PATTERN</div><div class="csval" id="cRecPat" style="font-size:1.1rem">—</div></div>
-        <div class="cs"><div class="cslbl">REF RANGE</div><div class="csval" id="cRefRng">—</div></div>
-        <div class="cs"><div class="cslbl">YOUR RANGE</div><div class="csval" id="cRecRng">—</div></div>
-        <div class="cs"><div class="cslbl">REF EXPRESSIVENESS</div><div class="csval" id="cRefExpr">—</div></div>
-        <div class="cs"><div class="cslbl">YOUR EXPRESSIVENESS</div><div class="csval" id="cRecExpr">—</div></div>
-      </div>
-      <div class="fb" id="fbText"></div>
-    </div>
-  </div>
-
-  <!-- ══ HISTORY ══ -->
-  <div class="panel" id="pHistory">
-    <div class="hpanel">
-      <div class="htitle">SAVED ATTEMPTS<button class="btn bg" style="padding:3px 9px;font-size:.6rem" onclick="clearHist()">DELETE ALL</button></div>
-      <div class="hlist" id="hlist"><span class="hempty">No attempts saved yet. Go to the Compare tab and save an attempt.</span></div>
-    </div>
-  </div>
-
-  <!-- ══ HELP ══ -->
-  <div class="panel" id="pHelp">
-    <div class="hgrid">
-      <div class="hcard"><div class="hcurve">↗</div><div class="hctitle" style="color:#a8ff78">RISE</div><div class="hcbody">Pitch rises at the end. Typical in yes/no questions. Conveys doubt or request for confirmation. E.g. "Really↗?"</div></div>
-      <div class="hcard"><div class="hcurve">↘</div><div class="hctitle" style="color:#ff6b6b">FALL</div><div class="hcbody">Pitch falls at the end. Indicates statements, certainty and finality. Typical in declarative sentences and Wh- questions. E.g. "I'm fine↘."</div></div>
-      <div class="hcard"><div class="hcurve">↗↘</div><div class="hctitle" style="color:#ffb347">RISE-FALL</div><div class="hcbody">Rises then falls. Expresses emphatic certainty, surprise or approval. E.g. "That's amazing↗↘!" Common in British English.</div></div>
-      <div class="hcard"><div class="hcurve">↘↗</div><div class="hctitle" style="color:#c4b5fd">FALL-RISE</div><div class="hcbody">Falls then rises. Indicates reservation, implicit contrast, or that the utterance continues. E.g. "I like it↘↗ but..."</div></div>
-      <div class="hcard"><div class="hcurve">→</div><div class="hctitle" style="color:#94a3b8">LEVEL</div><div class="hcbody">Relatively stable pitch. Can indicate listing, neutral reading, or monotonous speech with little expressive variation.</div></div>
-      <div class="hcard"><div class="hcurve">⤴</div><div class="hctitle" style="color:#00e5ff">FULL RISE</div><div class="hcbody">Marked rise (&gt;8 st). Strong surprise, heightened emotion, or an emphatic rhetorical question.</div></div>
-      <div class="hcard"><div class="hcurve">⤵</div><div class="hctitle" style="color:#f472b6">FULL FALL</div><div class="hcbody">Marked fall (&gt;8 st). Strong emphasis, authority, or definitive closure. Sharply downward curve.</div></div>
-      <div class="hcard"><div class="hctitle" style="color:#ffb347">💡 TIPS</div><div class="hcbody">• Speak 15–20 cm from the mic<br>• Avoid background noise<br>• Ideal voiced % is 40–80%<br>• Use headphones for shadowing<br>• Record several times and compare in History<br>• Try loading a book audio as reference</div></div>
-    </div>
-  </div>
-
-  <!-- ══ TUTORIAL ══ -->
-  <div class="panel" id="pTutorial">
-    <div class="tut-hero">
-      <div class="tut-badge">COMING SOON</div>
-      <div class="tut-title">Video Tutorial</div>
-      <div class="tut-sub">A step-by-step guide to using PitchLab for phonetics practice will be available here shortly.</div>
-      <div class="tut-video-placeholder">
-        <div class="tut-play-icon">▶</div>
-        <div class="tut-video-label">Tutorial video loading soon...</div>
-      </div>
-      <div class="tut-steps">
-        <div class="tut-step"><div class="tut-step-num">01</div><div class="tut-step-text"><b>ANALYZE</b> — Load or record audio to visualize the pitch contour.</div></div>
-        <div class="tut-step"><div class="tut-step-num">02</div><div class="tut-step-text"><b>COMPARE</b> — Load a reference (e.g. a book recording) and record yourself to compare pitch curves.</div></div>
-        <div class="tut-step"><div class="tut-step-num">03</div><div class="tut-step-text"><b>HISTORY</b> — Save your attempts and track progress over time.</div></div>
-        <div class="tut-step"><div class="tut-step-num">04</div><div class="tut-step-text"><b>READ THE PEAK</b> — The white diamond marks the nucleus. The pattern (Rise, Fall…) is determined from that point onward.</div></div>
-      </div>
-      <div class="tut-contact">Questions or suggestions? Write to <a href="mailto:kumaslab10@gmail.com">kumaslab10@gmail.com</a></div>
-    </div>
-  </div>
-
 </main>
-<div id="tt"></div>
+<footer class="footer">
+  <div class="about">
+    <div class="about-title">About · Contact</div>
+    <p>PitchLab is a free tool to make English intonation visible and train your ear. Your audio is processed locally and not stored.</p>
+    <p>Questions, ideas or suggestions? Write to <a href="mailto:contact.zekeslab@gmail.com">contact.zekeslab@gmail.com</a></p>
+    <p class="about-credit">Built by ZekesLab</p>
+  </div>
+</footer>
 
 <script>
-// ═══════ STATE ═══════
-const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const S={
-  anPitch:[],anWave:null,anDur:0,anAudio:null,
-  refPitch:[],refWave:null,refDur:0,refAudio:null,
-  recPitch:[],recWave:null,recDur:0,recAudio:null,
-  isRecAn:false,mrAn:null,acAn:null,anlAnim:null,chunksAn:[],
-  isRecCmp:false,mrCmp:null,chunksCmp:[],
-  hist:[],
-};
-
-// ═══════ UTILS ═══════
 const $=id=>document.getElementById(id);
-const su=s=>`<span class="su">${s}</span>`;
-function setStatus(t,m=''){
-  $('stxt').textContent=t;
-  $('sdot').className='dot'+(m==='on'?' on':m==='rec'?' rec':'');
-}
-function showAlert(msg,type='warn'){
-  const b=$('alertBar');b.className=type;
-  $('aicon').textContent=type==='err'?'✕':type==='ok'?'✓':'⚠';
-  $('amsg').textContent=msg;
-}
-function hideAlert(){$('alertBar').className='';$('alertBar').style.display='none';}
-function fmtT(s){const m=Math.floor(s/60),sc=Math.floor(s%60);return m+':'+(sc<10?'0':'')+sc;}
-function avgArr(a){return a.reduce((s,v)=>s+v,0)/a.length;}
-function freqToNote(f){const st=Math.round(12*Math.log2(f/440));return NOTE_NAMES[((st%12)+12)%12]+(Math.floor(st/12)+4);}
-
-// ═══════ TABS ═══════
-function tab(name){
-  const map={analyze:'pAnalyze',compare:'pCompare',history:'pHistory',help:'pHelp',tutorial:'pTutorial'};
-  const names=['analyze','compare','history','help','tutorial'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  $(map[name]).classList.add('active');
-  if(name==='history')renderHist();
-  setTimeout(()=>{
-    resizeAll();
-    if(name==='analyze')drawAnalyze();
-    if(name==='compare')drawCompare();
-  },60);
-}
-
-// ═══════ CANVAS RESIZE ═══════
-function resizeAll(){
-  const caA=$('caA');
-  if(caA){
-    const W=caA.clientWidth,H=caA.clientHeight;
-    const cA=$('cA');if(cA){cA.width=W;cA.height=H;}
-    const yA=$('yA');if(yA){yA.width=yA.parentElement.clientWidth;yA.height=H;}
-    const wA=$('wA');if(wA){wA.width=W;wA.height=wA.parentElement.clientHeight;}
-    const xA=$('xA');if(xA){xA.width=W;xA.height=xA.parentElement.clientHeight;}
-  }
-  const caC=$('caC');
-  if(caC){
-    const W=caC.clientWidth,H=caC.clientHeight;
-    const cC=$('cC');if(cC){cC.width=W;cC.height=H;}
-    const yC=$('yC');if(yC){yC.width=yC.parentElement.clientWidth;yC.height=H;}
-    const wRef=$('wRef');if(wRef){wRef.width=W;wRef.height=wRef.parentElement.clientHeight;}
-    const wRec=$('wRec');if(wRec){wRec.width=W;wRec.height=wRec.parentElement.clientHeight;}
-    const xC=$('xC');if(xC){xC.width=W;xC.height=xC.parentElement.clientHeight;}
-  }
-}
-window.addEventListener('resize',()=>setTimeout(()=>{resizeAll();drawAnalyze();drawCompare();},60));
-
-// ═══════ PITCH DETECTION (YIN) ═══════
-function detectPitch(buf,sr,fMin,fMax){
-  const minP=Math.floor(sr/fMax),maxP=Math.ceil(sr/fMin),n=buf.length;
-  const diff=new Float32Array(maxP+1);
-  for(let tau=minP;tau<=maxP;tau++){
-    let s=0,lim=Math.min(n-tau,2048);
-    for(let i=0;i<lim;i++){const d=buf[i]-buf[i+tau];s+=d*d;}
-    diff[tau]=s;
-  }
-  const cmnd=new Float32Array(maxP+1);cmnd[0]=1;
-  let run=0;
-  for(let tau=1;tau<=maxP;tau++){run+=diff[tau];cmnd[tau]=run>0?diff[tau]*tau/run:1;}
-  let best=-1,bestV=Infinity;
-  for(let tau=minP;tau<=maxP-1;tau++){
-    if(cmnd[tau]<0.1&&cmnd[tau]<cmnd[tau-1]&&cmnd[tau]<cmnd[tau+1]){best=tau;break;}
-    if(cmnd[tau]<bestV){bestV=cmnd[tau];if(bestV<0.3)best=tau;}
-  }
-  if(best===-1||bestV>0.35)return null;
-  const x0=best>0?cmnd[best-1]:cmnd[best],x2=best<maxP?cmnd[best+1]:cmnd[best];
-  return sr/(best+(x2-x0)/(2*(2*cmnd[best]-x0-x2)+1e-10));
-}
 function rms(buf){let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];return Math.sqrt(s/buf.length);}
+function parabolicMin(arr,i){if(i<=0||i>=arr.length-1)return i;const a=arr[i-1],b=arr[i],c=arr[i+1];const d=(a-2*b+c);if(Math.abs(d)<1e-12)return i;return i+0.5*(a-c)/d;}
+function semitones(f1,f2){return 12*Math.log2(f1/f2);}
 
-// ═══════ TRIM SILENCE ═══════
-function trimSilence(ch,sr,threshold=0.008,frameSz=512){
-  let start=0;
-  for(let i=0;i<ch.length-frameSz;i+=frameSz){
-    const sl=ch.slice(i,i+frameSz);let e=0;
-    for(let j=0;j<sl.length;j++)e+=sl[j]*sl[j];
-    if(Math.sqrt(e/frameSz)>threshold){start=Math.max(0,i-frameSz);break;}
+// ════════════════════════════════════════════════════════════════
+//  PITCH DETECTION — AMDF + Median Octave Snap
+//  AMDF finds the period as the deepest valley of Σ|x[i]-x[i+τ]|.
+//  The Median Octave Snap then pulls any point that jumped ~an octave
+//  back toward the local median, removing the AMDF's octave errors.
+// ════════════════════════════════════════════════════════════════
+function amdfBest(buf,sr,fMin,fMax){
+  const minP=Math.floor(sr/fMax),maxP=Math.ceil(sr/fMin),n=buf.length;
+  const amdf=new Float32Array(maxP+1);
+  for(let tau=minP;tau<=maxP;tau++){let s=0,lim=Math.min(n-tau,2048);for(let i=0;i<lim;i++)s+=Math.abs(buf[i]-buf[i+tau]);amdf[tau]=s/lim;}
+  // deepest valley = period
+  let best=-1,bestV=Infinity;
+  for(let tau=minP+1;tau<=maxP-1;tau++){if(amdf[tau]<amdf[tau-1]&&amdf[tau]<amdf[tau+1]&&amdf[tau]<bestV){bestV=amdf[tau];best=tau;}}
+  if(best<0)return null;
+  // voicing gate: the valley must be clearly below the average level
+  let mean=0;for(let t=minP;t<=maxP;t++)mean+=amdf[t];mean/=(maxP-minP+1);
+  if(bestV>mean*0.75)return null;
+  return sr/parabolicMin(amdf,best);
+}
+function postMedianSnap(series){
+  const out=series.map(d=>({...d}));const W=10;
+  for(let i=0;i<out.length;i++){
+    if(!out[i].freq)continue;
+    const win=[];for(let j=Math.max(0,i-W);j<=Math.min(out.length-1,i+W);j++)if(out[j].freq)win.push(out[j].freq);
+    if(win.length<5)continue;
+    win.sort((a,b)=>a-b);const med=win[Math.floor(win.length/2)];const st=semitones(out[i].freq,med);
+    if(st>7&&st<17)out[i].freq/=2;else if(st<-7&&st>-17)out[i].freq*=2;else if(st>=17)out[i].freq/=4;else if(st<=-17)out[i].freq*=4;
   }
-  let end=ch.length;
-  for(let i=ch.length-frameSz;i>frameSz;i-=frameSz){
-    const sl=ch.slice(i,i+frameSz);let e=0;
-    for(let j=0;j<sl.length;j++)e+=sl[j]*sl[j];
-    if(Math.sqrt(e/frameSz)>threshold){end=Math.min(ch.length,i+frameSz*2);break;}
-  }
-  return ch.slice(start,end);
+  return out;
+}
+// Light median filter + removal of voiced runs shorter than 6 frames.
+function finalize(data){
+  const out=data.map(d=>({...d}));const src=out.map(d=>d.freq);
+  for(let i=0;i<out.length;i++){if(!src[i])continue;const w=[];for(let j=Math.max(0,i-2);j<=Math.min(out.length-1,i+2);j++)if(src[j])w.push(src[j]);if(w.length>=3){w.sort((a,b)=>a-b);out[i].freq=w[Math.floor(w.length/2)];}}
+  let i=0;while(i<out.length){if(!out[i].freq){i++;continue;}let j=i;while(j<out.length&&out[j].freq)j++;if(j-i<6)for(let k=i;k<j;k++)out[k].freq=null;i=j;}
+  return out;
 }
 
-// ═══════ AUDIO QUALITY CHECK ═══════
-function checkQuality(ch){
-  const r=rms(ch);
-  const clipped=Array.from(ch).filter(s=>Math.abs(s)>0.98).length/ch.length;
-  if(clipped>0.01){showAlert('⚡ Saturated audio — move the mic further away or lower the volume.','err');return;}
-  if(r<0.002){showAlert('🔇 Audio is silent or empty — make sure you spoke during the recording.','err');return;}
-  if(r<0.01)showAlert('🔉 Weak signal — results may be less accurate.','warn');
+// ════════════════════════════════════════════════════════════════
+//  SMOOTHING METHODS — applied to the detected pitch BEFORE drawing.
+//  KEY LESSON: smoothing must NOT cross voiceless gaps, or it averages the two
+//  sides together and ERASES the real jumps between segments (the jumps Praat
+//  shows). Methods 1–4 now smooth each voiced segment INDEPENDENTLY, so every
+//  jump at a segment boundary stays visible. Method 5 (LOESS) is left as the
+//  old global version on purpose, as a reference for how much it flattens.
+//  Each method takes a series [{time,freq|null}] and returns a smoothed copy,
+//  preserving the unvoiced gaps (null stays null).
+// ════════════════════════════════════════════════════════════════
+
+// Shared helper: linearly interpolate across null gaps, remember which were null.
+function interpGaps(series){
+  const n=series.length;const freq=series.map(d=>d.freq);
+  const wasNull=freq.map(f=>f==null);const interp=freq.slice();
+  let lastIdx=-1;
+  for(let i=0;i<n;i++){
+    if(interp[i]!=null){
+      if(lastIdx>=0&&i-lastIdx>1){const a=interp[lastIdx],b=interp[i];for(let k=lastIdx+1;k<i;k++)interp[k]=a+(b-a)*(k-lastIdx)/(i-lastIdx);}
+      lastIdx=i;
+    }
+  }
+  let first=interp.findIndex(x=>x!=null);
+  if(first>0)for(let i=0;i<first;i++)interp[i]=interp[first];
+  let last=-1;for(let i=n-1;i>=0;i--)if(interp[i]!=null){last=i;break;}
+  if(last>=0&&last<n-1)for(let i=last+1;i<n;i++)interp[i]=interp[last];
+  return {interp,wasNull,ok:!interp.some(x=>x==null)};
+}
+function restore(series,vals,wasNull){return series.map((d,i)=>({time:d.time,freq:wasNull[i]?null:vals[i]}));}
+
+// Apply a per-run smoother: split into maximal voiced runs (no nulls), smooth
+// each run's values independently, never crossing a gap. Jumps between runs stay.
+function perRun(series,runFn){
+  const out=series.map(d=>({...d}));const n=series.length;let i=0;
+  while(i<n){
+    if(series[i].freq==null){i++;continue;}
+    let j=i;while(j<n&&series[j].freq!=null)j++;
+    const vals=[];for(let k=i;k<j;k++)vals.push(series[k].freq);
+    const sm=runFn(vals);
+    for(let k=i;k<j;k++)out[k].freq=sm[k-i];
+    i=j;
+  }
+  return out;
 }
 
-// ═══════ ANALYZE AUDIO BUFFER ═══════
-function analyzeBuffer(audioBuffer,target){
-  const sr=audioBuffer.sampleRate;
-  let ch=audioBuffer.getChannelData(0);
-  if(target==='an'||target==='rec'){
-    const trimmed=trimSilence(ch,sr);
-    if(trimmed.length>sr*0.1)ch=trimmed;
-    else showAlert('⚠ Could not detect speech — try speaking louder.','warn');
+// ── 1. GAUSSIAN LOW-PASS (per segment) — Praat's smooth, but each voiced run
+//      is filtered on its own, so jumps between segments are NOT flattened. ──
+function smoothGaussian(series){
+  const SIGMA=2.0;const radius=Math.ceil(SIGMA*3);
+  const kernel=[];for(let k=-radius;k<=radius;k++)kernel.push(Math.exp(-(k*k)/(2*SIGMA*SIGMA)));
+  return perRun(series,vals=>vals.map((_,i)=>{
+    let s=0,w=0;for(let k=-radius;k<=radius;k++){const j=i+k;if(j<0||j>=vals.length)continue;const kw=kernel[k+radius];s+=vals[j]*kw;w+=kw;}
+    return s/w;
+  }));
+}
+
+// ── 2. EDGE-PRESERVING (bilateral) — smooths small jitter but KEEPS genuine
+//      jumps sharp: neighbours far in pitch get almost no weight. Pretty + honest. ──
+function smoothBilateral(series){
+  const SIGMA_T=2.5,SIGMA_ST=0.8;const radius=Math.ceil(SIGMA_T*3);
+  return perRun(series,vals=>vals.map((v0,i)=>{
+    let s=0,w=0;
+    for(let k=-radius;k<=radius;k++){const j=i+k;if(j<0||j>=vals.length)continue;
+      const wt=Math.exp(-(k*k)/(2*SIGMA_T*SIGMA_T));
+      const dst=12*Math.log2(vals[j]/v0);
+      const wf=Math.exp(-(dst*dst)/(2*SIGMA_ST*SIGMA_ST));
+      const kw=wt*wf;s+=vals[j]*kw;w+=kw;
+    }
+    return w>0?s/w:v0;
+  }));
+}
+
+// ── 3. MEDIAN + light average (per segment) — median kills single-frame spikes
+//      while keeping real steps sharp; a light 3-point average tidies the rest. ──
+function smoothMedian(series){
+  return perRun(series,vals=>{
+    const n=vals.length;
+    const med=vals.map((_,i)=>{const w=[];for(let k=-2;k<=2;k++){const j=i+k;if(j>=0&&j<n)w.push(vals[j]);}w.sort((a,b)=>a-b);return w[Math.floor(w.length/2)];});
+    return med.map((_,i)=>{let s=0,c=0;for(let k=-1;k<=1;k++){const j=i+k;if(j>=0&&j<n){s+=med[j];c++;}}return s/c;});
+  });
+}
+
+// ── 4. SAVITZKY–GOLAY (per segment) — local quadratic fit, window 7. Preserves
+//      peak/step shapes far better than a plain average; per run keeps jumps. ──
+function smoothSavGol(series){
+  const c=[-2,3,6,7,6,3,-2],norm=21,half=3;
+  return perRun(series,vals=>{
+    const n=vals.length;if(n<7)return vals.slice();
+    return vals.map((v,i)=>{if(i<half||i>=n-half)return v;let s=0;for(let k=-half;k<=half;k++)s+=c[k+half]*vals[i+k];return s/norm;});
+  });
+}
+
+// ── 5. LOESS — UNCHANGED reference: GLOBAL local-regression that interpolates
+//      across gaps. Kept on purpose so you can SEE how much it flattens jumps. ──
+function smoothLoess(series){
+  const {interp,wasNull,ok}=interpGaps(series);if(!ok)return series;
+  const n=interp.length,span=9; // window radius in frames
+  const out=new Array(n);
+  for(let i=0;i<n;i++){
+    let sw=0,swx=0,swy=0,swxx=0,swxy=0;
+    for(let k=-span;k<=span;k++){
+      const j=i+k;if(j<0||j>=n)continue;
+      const dist=Math.abs(k)/(span+1);const tw=Math.pow(1-Math.pow(dist,3),3); // tricube
+      if(tw<=0)continue;
+      sw+=tw;swx+=tw*j;swy+=tw*interp[j];swxx+=tw*j*j;swxy+=tw*j*interp[j];
+    }
+    const denom=sw*swxx-swx*swx;
+    if(Math.abs(denom)<1e-9){out[i]=interp[i];continue;}
+    const slope=(sw*swxy-swx*swy)/denom,intercept=(swy-slope*swx)/sw;
+    out[i]=slope*i+intercept;
   }
-  const dur=ch.length/sr;
-  checkQuality(ch);
+  return restore(series,out,wasNull);
+}
+
+const SMOOTHERS=[
+  {id:5,name:'Pitch',idea:'F0 · Hz',fn:smoothLoess,color:'#00e5ff'},
+];
+
+// Run detection over a channel → pitch series (async, with progress bar).
+function analyzePitch(ch,sr,done){
   const fMin=parseInt($('fMin').value),fMax=parseInt($('fMax').value);
-  const fs=Math.round(sr*0.04),hs=Math.round(sr*0.01);
-  const total=Math.floor((ch.length-fs)/hs);
-  const data=[];
-  const barEl=target==='an'?$('pb1'):$('pb2');
-  const fillEl=target==='an'?$('pf1'):$('pf2');
-  if(barEl)barEl.style.display='block';
-  let fr=0;
+  const fs=2048,hs=Math.round(sr*0.01);const total=Math.floor((ch.length-fs)/hs);
+  const data=[];let fr=0;
+  $('pb').style.display='block';
   function chunk(){
-    const end=Math.min(fr+300,total);
-    for(;fr<end;fr++){
-      const st=fr*hs,seg=ch.slice(st,st+fs);
-      const e=rms(seg),v=e>0.005;
-      const f=v?detectPitch(seg,sr,fMin,fMax):null;
-      data.push({time:(st+fs/2)/sr,freq:f||null,voiced:f!==null});
-    }
-    if(fillEl)fillEl.style.width=(fr/total*100)+'%';
+    const end=Math.min(fr+120,total);
+    for(;fr<end;fr++){const st=fr*hs,seg=ch.slice(st,st+fs);const e=rms(seg),v=e>0.006;let f=null;if(v){try{f=amdfBest(seg,sr,fMin,fMax);}catch(e){f=null;}}data.push({time:(st+fs/2)/sr,freq:(f&&f>=fMin&&f<=fMax)?f:null});}
+    $('pf').style.width=(fr/total*100)+'%';
     if(fr<total){requestAnimationFrame(chunk);return;}
-    if(barEl)barEl.style.display='none';
-    if(fillEl)fillEl.style.width='0%';
-    if(target==='an'){
-      S.anPitch=data;S.anWave=ch;S.anDur=dur;
-      $('emA').style.display='none';
-      $('bClr').disabled=false;
-      resizeAll();drawAnalyze();updateStats();
-      setStatus('ANALYSIS COMPLETE');showAlert('✓ Analysis completed.','ok');
-    } else if(target==='ref'){
-      S.refPitch=data;S.refWave=ch;S.refDur=dur;
-      if(S.recPitch.length)$('emC').style.display='none';
-      resizeAll();drawCompare();tryCompare();setStatus('REFERENCE READY');
-    } else if(target==='rec'){
-      S.recPitch=data;S.recWave=ch;S.recDur=dur;
-      $('emC').style.display='none';
-      $('bSave').disabled=false;$('bClrCmp').disabled=false;
-      resizeAll();drawCompare();tryCompare();setStatus('RECORDING READY');
-    }
+    $('pb').style.display='none';$('pf').style.width='0%';
+    done(finalize(postMedianSnap(data)));
   }
   chunk();
 }
 
-// ═══════ SLIDERS ═══════
-document.addEventListener('DOMContentLoaded',()=>{
-  $('fMin').addEventListener('input',function(){$('fMinV').textContent=this.value+' Hz';drawAnalyze();drawCompare();});
-  $('fMax').addEventListener('input',function(){$('fMaxV').textContent=this.value+' Hz';drawAnalyze();drawCompare();});
-});
+// ════ AUDIO PREP — silence trim + WAV encoding ════
+function trimSilence(ch,sr){const frameSz=Math.round(sr*0.02),pad=Math.round(sr*0.05);const en=[];for(let i=0;i+frameSz<=ch.length;i+=frameSz){let e=0;for(let j=0;j<frameSz;j++)e+=ch[i+j]*ch[i+j];en.push(Math.sqrt(e/frameSz));}if(!en.length)return{ch,offset:0};const sorted=[...en].sort((a,b)=>a-b);const floor=sorted[Math.floor(sorted.length*0.15)]||0,speech=sorted[Math.floor(sorted.length*0.92)]||0.01;const thr=Math.max(floor+(speech-floor)*0.2,speech*0.12,0.01);const NEED=4;let sF=0,eF=en.length-1;for(let k=0;k<en.length;k++){let ok=true;for(let m=0;m<NEED&&k+m<en.length;m++){if(en[k+m]<=thr){ok=false;break;}}if(ok){sF=k;break;}}for(let k=en.length-1;k>=0;k--){let ok=true;for(let m=0;m<NEED&&k-m>=0;m++){if(en[k-m]<=thr){ok=false;break;}}if(ok){eF=k;break;}}const start=Math.max(0,sF*frameSz-pad),end=Math.min(ch.length,(eF+1)*frameSz+pad);if(end<=start)return{ch,offset:0};return{ch:ch.slice(start,end),offset:start/sr};}
+function makeWavBlob(cd,sr){const len=cd.length,b=new ArrayBuffer(44+len*2),v=new DataView(b);let p=0;const ws=s=>{for(let i=0;i<s.length;i++)v.setUint8(p++,s.charCodeAt(i));};const w32=x=>{v.setUint32(p,x,true);p+=4;};const w16=x=>{v.setUint16(p,x,true);p+=2;};ws('RIFF');w32(36+len*2);ws('WAVE');ws('fmt ');w32(16);w16(1);w16(1);w32(sr);w32(sr*2);w16(2);w16(16);ws('data');w32(len*2);for(let i=0;i<len;i++){let s=Math.max(-1,Math.min(1,cd[i]));v.setInt16(p,s<0?s*0x8000:s*0x7FFF,true);p+=2;}return new Blob([b],{type:'audio/wav'});}
 
-// ═══════ DRAWING ═══════
-function fY(f,lo,hi,H){return H-((Math.log2(f)-Math.log2(lo))/(Math.log2(hi)-Math.log2(lo)))*H;}
+// ════ STATE ════
+const S={tab:'analyze',sel:1,
+  anWave:null,anDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,anFull:null,
+  refWave:null,refDur:0,refRaw:null,refSmooth:[],refAudio:null,refSr:0,
+  recWave:null,recDur:0,recRaw:null,recSmooth:[],recAudio:null,recSr:0,
+  curTime:0,raf:null,isRec:false,mr:null,chunks:[],micStream:null,micCtx:null,micAnalyser:null,micGain:null,micBuf:null,micSr:0,meterRaf:null,
+  live:false,liveData:[],liveT0:0,liveRaf:null,
+  selA:null,selB:null,selDrag:null};
 
-function drawPitchOnCanvas(canvasId,pitchSets,dur){
-  const c=$(canvasId);if(!c)return;
-  const ctx=c.getContext('2d'),W=c.width,H=c.height;
+// ════ DRAWING — sliding 2s window, plain clean line (smoothing does the work) ════
+const PAD={l:44,t:16,r:12,b:22};
+function fY(hz,lo,hi,gH){return PAD.t+(1-(Math.log2(Math.max(hz,lo))-Math.log2(lo))/(Math.log2(hi)-Math.log2(lo)))*gH;}
+function drawGraph(canvasId,datasets,fullDur,curTime){
+  const cv=$(canvasId);if(!cv)return;const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
   const lo=parseInt($('fMin').value),hi=parseInt($('fMax').value);
-  ctx.fillStyle='#0a0e1a';ctx.fillRect(0,0,W,H);
-  // H grid
-  [100,150,200,250,300,400,500,600,700,800].forEach(f=>{
-    if(f<lo||f>hi)return;
-    const y=Math.round(fY(f,lo,hi,H))+.5;
-    ctx.strokeStyle=f%200===0?'#1f2d45':'#151f30';
-    ctx.lineWidth=f%200===0?1:.5;
-    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
-  });
-  // V grid
-  const ts=dur>10?2:dur>5?1:.5;
-  for(let t=0;t<=dur;t+=ts){
-    const x=Math.round(t/dur*W)+.5;
-    ctx.strokeStyle='#1a2538';ctx.lineWidth=.5;
-    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
-  }
-  // Draw each pitch set
-  pitchSets.forEach(({data,color,showMean,peakIdx})=>{
+  const gW=W-PAD.l-PAD.r,gH=H-PAD.t-PAD.b;const winSec=parseFloat($('winSec').value);
+  let tStart,tEnd;const useWindow=fullDur>winSec;
+  if(useWindow){const cur=curTime||0;tStart=cur-winSec*0.5;if(tStart<0)tStart=0;tEnd=tStart+winSec;if(tEnd>fullDur){tEnd=fullDur;tStart=Math.max(0,tEnd-winSec);}}else{tStart=0;tEnd=fullDur;}
+  const spanDur=tEnd-tStart;const xT=t=>PAD.l+((t-tStart)/spanDur)*gW;
+  ctx.fillStyle='#0a0d12';ctx.fillRect(0,0,W,H);
+  // Hz grid
+  ctx.font='9px "Space Mono",ui-monospace,monospace';ctx.textAlign='right';
+  for(let hz=Math.ceil(lo/50)*50;hz<=hi;hz+=50){const y=fY(hz,lo,hi,gH);if(y<PAD.t-2||y>H-PAD.b+2)continue;const main=hz%100===0;ctx.strokeStyle=main?'#223040':'#151f2a';ctx.lineWidth=main?.8:.4;ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(W-PAD.r,y);ctx.stroke();ctx.fillStyle='#3a5060';ctx.fillText(hz,PAD.l-4,y+3);}
+  // time grid
+  const ts=spanDur>4?1:spanDur>2?0.5:0.25;ctx.textAlign='center';ctx.font='8px "Space Mono",ui-monospace,monospace';
+  for(let t=Math.ceil(tStart/ts)*ts;t<=tEnd+.001;t+=ts){const x=xT(t);ctx.strokeStyle='#141e28';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,H-PAD.b);ctx.stroke();ctx.fillStyle='#2e4050';ctx.fillText(t.toFixed(1)+'s',x,H-5);}
+  datasets.forEach((ds,dsIdx)=>{
+    const data=ds.data,color=ds.color;
     if(!data||!data.length)return;
-    const voiced=data.filter(d=>d.freq);
-    if(!voiced.length)return;
-    // Mean line
-    if(showMean){
-      const m=avgArr(voiced.map(d=>d.freq));
-      const yM=fY(m,lo,hi,H);
-      ctx.save();ctx.strokeStyle='rgba(255,107,107,0.35)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
-      ctx.beginPath();ctx.moveTo(0,yM);ctx.lineTo(W,yM);ctx.stroke();ctx.restore();
+    const visible=data.filter(d=>d.time>=tStart-0.1&&d.time<=tEnd+0.1);
+    // Build line segments, breaking ONLY on voiceless gaps. The smoothing already
+    // removed the impossible jumps, so the line itself can be drawn plain and clean.
+    let seg=[];const segs=[];
+    for(let k=0;k<visible.length;k++){
+      const d=visible[k];
+      if(!d.freq){if(seg.length){segs.push(seg);seg=[];}continue;}
+      if(seg.length){
+        const last=seg[seg.length-1];
+        if(d.time-last.time>0.15){segs.push(seg);seg=[d];continue;}
+      }
+      seg.push(d);
     }
-    // Connecting line
-    const path=new Path2D();let inV=false;
-    data.forEach(d=>{
-      if(!d.freq){inV=false;return;}
-      const x=d.time/dur*W,y=fY(d.freq,lo,hi,H);
-      if(!inV){path.moveTo(x,y);inV=true;}else{path.lineTo(x,y);}
-    });
-    ctx.save();ctx.strokeStyle=color+'55';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.stroke(path);ctx.restore();
-    // Dots
-    const dr=Math.max(2,Math.min(3.5,W/Math.max(data.length,1)*1.5));
-    data.forEach(d=>{
-      if(!d.freq)return;
-      const x=d.time/dur*W,y=fY(d.freq,lo,hi,H);
-      ctx.beginPath();ctx.arc(x,y,dr,0,Math.PI*2);
-      ctx.fillStyle=color;ctx.fill();
-    });
-    // Peak marker
-    if(peakIdx>=0&&peakIdx<data.length&&data[peakIdx]&&data[peakIdx].freq){
-      const pk=data[peakIdx];
-      const px=pk.time/dur*W,py=fY(pk.freq,lo,hi,H);
-      ctx.save();
-      ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
-      ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();
-      ctx.setLineDash([]);
-      const ds=6;
-      ctx.beginPath();
-      ctx.moveTo(px,py-ds);ctx.lineTo(px+ds,py);ctx.lineTo(px,py+ds);ctx.lineTo(px-ds,py);ctx.closePath();
-      ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fill();
-      ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
-      ctx.font='bold 9px Space Mono,monospace';ctx.fillStyle='rgba(255,255,255,0.5)';
-      ctx.textAlign=px>W*0.85?'right':'left';
-      ctx.fillText('PEAK',px>W*0.85?px-10:px+10,py-10);
-      ctx.restore();
+    if(seg.length)segs.push(seg);
+    // glow line
+    ctx.save();ctx.shadowColor=color;ctx.shadowBlur=8;ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.lineJoin='round';ctx.lineCap='round';
+    segs.forEach(s=>{if(s.length<2)return;ctx.beginPath();s.forEach((d,j)=>{const x=xT(d.time),y=fY(d.freq,lo,hi,gH);j?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();});
+    ctx.restore();
+    // dots on every voiced frame
+    ctx.fillStyle=color;visible.forEach(d=>{if(!d.freq)return;const x=xT(d.time),y=fY(d.freq,lo,hi,gH);ctx.beginPath();ctx.arc(x,y,1.4,0,Math.PI*2);ctx.fill();});
+    // travelling dot
+    if(curTime>=tStart&&curTime<=tEnd){
+      const near=data.filter(d=>d.freq).reduce((b,d)=>!b||Math.abs(d.time-curTime)<Math.abs(b.time-curTime)?d:b,null);
+      if(near&&Math.abs(near.time-curTime)<0.1){const px=xT(near.time),dy=fY(near.freq,lo,hi,gH);const grad=ctx.createRadialGradient(px,dy,0,px,dy,16);grad.addColorStop(0,color+'66');grad.addColorStop(1,'transparent');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(px,dy,16,0,Math.PI*2);ctx.fill();ctx.shadowColor=color;ctx.shadowBlur=10;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(px,dy,6,0,Math.PI*2);ctx.stroke();ctx.fillStyle=color;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(px,dy,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
     }
   });
+  // playhead
+  if(curTime>=tStart&&curTime<=tEnd){const px=xT(curTime);ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,PAD.t);ctx.lineTo(px,H-PAD.b);ctx.stroke();}
+  // window scrollbar
+  if(useWindow){const barY=H-3;ctx.fillStyle='#1a2530';ctx.fillRect(PAD.l,barY,gW,2);const fx=PAD.l+(tStart/fullDur)*gW,fw=(spanDur/fullDur)*gW;ctx.fillStyle=(datasets[0].color)+'88';ctx.fillRect(fx,barY,fw,2);}
 }
 
-function drawYAxis(canvasId,H){
-  const c=$(canvasId);if(!c)return;
-  const ctx=c.getContext('2d'),W=c.width;
-  const lo=parseInt($('fMin').value),hi=parseInt($('fMax').value);
+function drawActive(){
+  if(S.tab==='analyze'){
+    if(!S.anSmooth.length)return;
+    const cur=S.anAudio?S.anAudio.currentTime:0;
+    SMOOTHERS.forEach((sm,i)=>drawGraph('an-cv-'+i,[{data:S.anSmooth[i],color:sm.color}],S.anDur||1,cur));
+    drawSelectionLayer();
+  }else{
+    if(!S.refSmooth.length&&!S.recSmooth.length)return;
+    // follow whichever audio is actually playing (max-of-both parked one audio and broke the dot)
+    const playing=[S.refAudio,S.recAudio].find(x=>x&&!x.paused);
+    const cur=playing?playing.currentTime:Math.max(S.refAudio?S.refAudio.currentTime:0,S.recAudio?S.recAudio.currentTime:0);
+    const dur=Math.max(S.refDur,S.recDur,0.1);
+    SMOOTHERS.forEach((sm,i)=>drawGraph('cmp-cv-'+i,[{data:(S.refSmooth[i]||[]),color:'#ff6b6b'},{data:(S.recSmooth[i]||[]),color:'#00e5ff'}],dur,cur));
+  }
+}
+
+// ════ OVERVIEW STRIP — waveform of the SAME moving window as the main graph above ════
+// Compute the visible [tStart,tEnd] window for a given full duration and playhead, exactly like drawGraph.
+function windowFor(fullDur,cur){const winSec=parseFloat($('winSec').value);let tStart=0,tEnd=fullDur;if(fullDur>winSec){const c=cur||0;tStart=c-winSec*0.5;if(tStart<0)tStart=0;tEnd=tStart+winSec;if(tEnd>fullDur){tEnd=fullDur;tStart=Math.max(0,tEnd-winSec);}}return{tStart,tEnd};}
+function drawOverview(){
+  if(S.tab==='analyze'){
+    drawOneOverview('an-ov-0',S.anWave,S.anSr,S.anDur,S.anAudio?S.anAudio.currentTime:0,'#00e5ff');
+  }else{
+    const playing=[S.refAudio,S.recAudio].find(x=>x&&!x.paused);
+    const cur=playing?playing.currentTime:Math.max(S.refAudio?S.refAudio.currentTime:0,S.recAudio?S.recAudio.currentTime:0);
+    const dur=Math.max(S.refDur,S.recDur,0.1);
+    const wave=S.recWave||S.refWave,sr=S.recWave?S.recSr:S.refSr,col=S.recWave?'#00e5ff':'#ff6b6b';
+    drawOneOverview('cmp-ov-0',wave,sr,dur,cur,col);
+  }
+}
+function drawOneOverview(canvasId,wave,sr,fullDur,cur,color){
+  const cv=$(canvasId);if(!cv)return;const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+  ctx.fillStyle='#0b0e14';ctx.fillRect(0,0,W,H);
+  if(!wave||!wave.length||!sr)return;
+  // same horizontal layout and same moving window as the graph above
+  const lo=PAD.l,hi=W-PAD.r,gW=hi-lo;
+  const {tStart,tEnd}=windowFor(fullDur,cur);
+  const xT=t=>lo+((t-tStart)/(tEnd-tStart))*gW;
+  const i0=Math.max(0,Math.floor(tStart*sr)),i1=Math.min(wave.length,Math.floor(tEnd*sr));
+  const span=Math.max(1,i1-i0),mid=H/2,step=span/gW;
+  ctx.strokeStyle=color;ctx.lineWidth=1;
+  for(let x=0;x<gW;x++){let mn=1,mx=-1;const s=i0+Math.floor(x*step),e=i0+Math.min(span,Math.floor((x+1)*step));for(let i=s;i<e;i++){const v=wave[i];if(v<mn)mn=v;if(v>mx)mx=v;}if(mx<mn)continue;ctx.beginPath();ctx.moveTo(lo+x+0.5,mid-mx*mid*0.9);ctx.lineTo(lo+x+0.5,mid-mn*mid*0.9);ctx.stroke();}
+  // playhead, same position as the graph above
+  if(cur>=tStart&&cur<=tEnd){const px=xT(cur);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px,3,3,0,Math.PI*2);ctx.fill();}
+}
+
+// ════ SELECTION (Analyze only) — drag on the graph to isolate a part ════
+function winMap(){return windowFor(S.anDur||1,S.anAudio?S.anAudio.currentTime:0);}
+function timeFromX(x,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();const frac=Math.max(0,Math.min(1,(x-lo)/gW));return tStart+frac*(tEnd-tStart);}
+function xFromTime(t,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();return lo+((t-tStart)/(tEnd-tStart))*gW;}
+function drawSelectionLayer(){
+  const cv=$('an-sel-0');if(!cv)return;const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(0,0,W,H);
-  ctx.font='500 9px Space Mono,monospace';ctx.fillStyle='#64748b';ctx.textAlign='right';
-  [75,100,150,200,250,300,400,500,600,700,800].forEach(f=>{
-    if(f<lo||f>hi)return;
-    const y=fY(f,lo,hi,H);
-    ctx.fillText(f,W-6,y+3);
-    ctx.fillStyle='#1f2d45';ctx.fillRect(W-4,y,4,1);ctx.fillStyle='#64748b';
-  });
-  ctx.save();ctx.translate(10,H/2);ctx.rotate(-Math.PI/2);
-  ctx.textAlign='center';ctx.font='500 8px Space Mono,monospace';ctx.fillStyle='#475569';
-  ctx.fillText('Hz',0,0);ctx.restore();
+  if(S.selA==null||S.selB==null)return;
+  let x1=xFromTime(S.selA,cv),x2=xFromTime(S.selB,cv);if(x2<x1){const t=x1;x1=x2;x2=t;}
+  ctx.fillStyle='rgba(0,229,255,.16)';ctx.fillRect(x1,0,x2-x1,H);
+  ctx.strokeStyle='#00e5ff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,0);ctx.lineTo(x1,H);ctx.moveTo(x2,0);ctx.lineTo(x2,H);ctx.stroke();
 }
-
-function drawWave(canvasId,data,color){
-  const c=$(canvasId);if(!c)return;
-  const ctx=c.getContext('2d'),W=c.width,H=c.height;
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(0,0,W,H);
-  if(!data)return;
-  const step=Math.max(1,Math.floor(data.length/W)),mid=H/2;
-  for(let x=0;x<W;x++){
-    const i=Math.floor(x/W*data.length);let mx=0,mn=0;
-    for(let j=i;j<i+step&&j<data.length;j++){if(data[j]>mx)mx=data[j];if(data[j]<mn)mn=data[j];}
-    ctx.fillStyle=color+'60';ctx.fillRect(x,mid-mx*(mid*.9),1,Math.max(1,(mx-mn)*(mid*.9)));
+function setupSelection(){
+  const cv=$('an-sel-0');if(!cv)return;
+  const getX=e=>{const r=cv.getBoundingClientRect();return(e.touches?e.touches[0].clientX:e.clientX)-r.left;};
+  function down(e){if(!S.anWave)return;e.preventDefault();const x=getX(e);S.selDrag=true;S.selA=timeFromX(x,cv);S.selB=S.selA;drawSelectionLayer();}
+  function move(e){if(!S.selDrag)return;const x=getX(e);S.selB=timeFromX(x,cv);drawSelectionLayer();updateSelInfo();}
+  function up(){if(!S.selDrag)return;S.selDrag=false;
+    if(S.selA!=null&&S.selB!=null&&Math.abs(S.selB-S.selA)<0.05){S.selA=S.selB=null;drawSelectionLayer();$('an-seltools').classList.remove('show');return;}
+    if(S.selA!=null&&S.selB!=null){if(S.selB<S.selA){const t=S.selA;S.selA=S.selB;S.selB=t;}$('an-seltools').classList.add('show');updateSelInfo();}
   }
-  ctx.strokeStyle=color+'20';ctx.lineWidth=.5;
-  ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();
+  cv.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+  cv.addEventListener('touchstart',down,{passive:false});cv.addEventListener('touchmove',move,{passive:false});cv.addEventListener('touchend',up);
+}
+function updateSelInfo(){const el=$('an-selinfo');if(!el||S.selA==null)return;const a=Math.min(S.selA,S.selB),b=Math.max(S.selA,S.selB);el.textContent=`selection  ${a.toFixed(2)}s – ${b.toFixed(2)}s  (${(b-a).toFixed(2)}s)`;}
+window.isolateSelection=function(){
+  if(S.selA==null||S.selB==null||!S.anFull)return;
+  const {ch,sr}=S.anFull;const a=Math.max(0,Math.min(S.selA,S.selB)),b=Math.min(ch.length/sr,Math.max(S.selA,S.selB));
+  const i0=Math.floor(a*sr),i1=Math.floor(b*sr);if(i1-i0<sr*0.05)return;
+  const part=ch.slice(i0,i1);S.selA=S.selB=null;$('an-seltools').classList.remove('show');
+  analyzeSegment(part,sr,'an');
+  const idea=document.querySelector('#anStack .cidea');if(idea){idea.innerHTML='isolated part · <a href="#" id="an-backfull" style="color:var(--cyan)">show full audio</a>';const bf=$('an-backfull');if(bf)bf.addEventListener('click',ev=>{ev.preventDefault();backToFull();});}
+};
+function backToFull(){if(!S.anFull)return;analyzeSegment(S.anFull.ch,S.anFull.sr,'an');const idea=document.querySelector('#anStack .cidea');if(idea)idea.textContent='F0 · Hz · drag on the graph to isolate a part';}
+// Send the current selection to Compare as the reference, then switch tabs so you can record your voice against it.
+window.selectionToReference=function(){
+  if(S.selA==null||S.selB==null||!S.anFull)return;
+  const {ch,sr}=S.anFull;const a=Math.max(0,Math.min(S.selA,S.selB)),b=Math.min(ch.length/sr,Math.max(S.selA,S.selB));
+  const i0=Math.floor(a*sr),i1=Math.floor(b*sr);if(i1-i0<sr*0.05)return;
+  const part=ch.slice(i0,i1);S.selA=S.selB=null;$('an-seltools').classList.remove('show');drawSelectionLayer();
+  analyzeSegment(part,sr,'ref');
+  switchTab('compare');
+};
+// ════ LIVE PRACTICE (Compare) — see your pitch in real time over the reference,
+//   try as many times as you want without the record→analyse→repeat cycle. ════
+async function toggleLive(){
+  if(S.live){stopLive();return;}
+  try{
+    await getMic();
+    if(S.micCtx&&S.micCtx.state==='suspended'){try{await S.micCtx.resume();}catch(_){}}
+    S.liveData=[];S.liveT0=performance.now();S.live=true;
+    $('liveBtn').classList.add('on');$('liveBtn').textContent='● Stop live';
+    document.querySelectorAll('#cmpStack .empty').forEach(e=>e.style.display='none');
+    startMeter();liveLoop();
+  }catch{alert('No microphone access');}
+}
+function stopLive(){
+  S.live=false;if(S.liveRaf){cancelAnimationFrame(S.liveRaf);S.liveRaf=null;}
+  const b=$('liveBtn');if(b){b.classList.remove('on');b.textContent='● Live practice';}
+}
+function liveLoop(){
+  if(!S.live)return;
+  if(!S.micAnalyser){S.liveRaf=requestAnimationFrame(liveLoop);return;}
+  S.micAnalyser.getFloatTimeDomainData(S.micBuf);
+  const e=rms(S.micBuf),fMin=parseInt($('fMin').value),fMax=parseInt($('fMax').value);
+  let f=null;if(e>0.006){try{f=amdfBest(S.micBuf,S.micSr,fMin,fMax);}catch(_){f=null;}}
+  const t=(performance.now()-S.liveT0)/1000;
+  S.liveData.push({time:t,freq:(f&&f>=fMin&&f<=fMax)?f:null});
+  const cutoff=t-6;while(S.liveData.length&&S.liveData[0].time<cutoff)S.liveData.shift();
+  drawLive();
+  S.liveRaf=requestAnimationFrame(liveLoop);
+}
+function drawLive(){
+  // your live pitch (smoothed with the same method) scrolls in a moving window;
+  // the reference is stretched across the same window as an always-visible target shape.
+  let smoothed;try{smoothed=SMOOTHERS[0].fn(S.liveData.map(d=>({...d})));}catch(_){smoothed=S.liveData.map(d=>({...d}));}
+  const last=S.liveData.length?S.liveData[S.liveData.length-1].time:0;
+  const winSec=parseFloat($('winSec').value);
+  const dur=Math.max(last,winSec);
+  const {tStart,tEnd}=windowFor(dur,last);
+  let refGuide=[];
+  const ref=S.refSmooth[0]||[];const rv=ref.filter(d=>d.freq!=null);
+  if(rv.length>1){const t0=rv[0].time,t1=rv[rv.length-1].time,span=(t1-t0)||1;refGuide=ref.map(d=>({time:tStart+((d.time-t0)/span)*(tEnd-tStart),freq:d.freq}));}
+  drawGraph('cmp-cv-0',[{data:refGuide,color:'#ff6b6b'},{data:smoothed,color:'#00e5ff'}],dur,last);
 }
 
-function drawXAxis(canvasId,dur){
-  const c=$(canvasId);if(!c)return;
-  const ctx=c.getContext('2d'),W=c.width,H=c.height;
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);
-  if(!dur)return;
-  const ts=dur>20?5:dur>10?2:dur>5?1:.5;
-  ctx.font='9px Space Mono,monospace';ctx.fillStyle='#64748b';ctx.textAlign='center';
-  for(let t=0;t<=dur;t+=ts){
-    const x=t/dur*W;
-    ctx.fillStyle='#1f2d45';ctx.fillRect(x,0,1,6);
-    ctx.fillStyle='#64748b';ctx.fillText(t.toFixed(1)+'s',x,H-4);
-  }
-}
 
-function drawAnalyze(){
-  const H=$('cA').height||300;
-  const anRes=analyzePattern(S.anPitch);
-  drawPitchOnCanvas('cA',[{data:S.anPitch,color:'#00e5ff',showMean:true,peakIdx:anRes.peakIdx>=0?anRes.peakIdx:-1}],S.anDur||1);
-  drawYAxis('yA',H);
-  drawWave('wA',S.anWave,'#00e5ff');
-  drawXAxis('xA',S.anDur);
+// ════ STATS ════
+function statsHTML(data){
+  const v=(data||[]).filter(d=>d.freq);
+  if(!v.length)return '<span>no pitch detected</span>';
+  const fs=v.map(d=>d.freq);const mean=(fs.reduce((a,b)=>a+b,0)/fs.length).toFixed(0);
+  const mn=Math.min(...fs).toFixed(0),mx=Math.max(...fs).toFixed(0);const vpct=(v.length/data.length*100).toFixed(0);
+  // "Roughness": mean absolute frame-to-frame change — lower = smoother (the key metric here)
+  let rough=0,rn=0;for(let k=1;k<data.length;k++){if(data[k].freq&&data[k-1].freq){rough+=Math.abs(data[k].freq-data[k-1].freq);rn++;}}
+  const r=rn?(rough/rn).toFixed(2):'—';
+  return `Mean:<b>${mean}Hz</b> Range:<b>${mn}-${mx}Hz</b> Voiced:<b>${vpct}%</b> Roughness:<b>${r}Hz/fr</b>`;
 }
-
-function drawCompare(){
-  const dur=Math.max(S.refDur,S.recDur,0.1);
-  const H=$('cC').height||300;
-  const refRes=analyzePattern(S.refPitch),recRes=analyzePattern(S.recPitch);
-  drawPitchOnCanvas('cC',[
-    {data:S.refPitch,color:'#ff6b6b',showMean:false,peakIdx:refRes.peakIdx>=0?refRes.peakIdx:-1},
-    {data:S.recPitch,color:'#00e5ff',showMean:false,peakIdx:recRes.peakIdx>=0?recRes.peakIdx:-1},
-  ],dur);
-  drawYAxis('yC',H);
-  drawWave('wRef',S.refWave,'#ff6b6b');
-  drawWave('wRec',S.recWave,'#00e5ff');
-  drawXAxis('xC',dur);
-}
-
-// ═══════ STATS ═══════
 function updateStats(){
-  const v=S.anPitch.filter(d=>d.freq);if(!v.length)return;
-  const fs=v.map(d=>d.freq),mn=Math.min(...fs),mx=Math.max(...fs);
-  const rng=(12*Math.log2(mx/mn)).toFixed(1);
-
-  $('sDur').innerHTML=S.anDur.toFixed(2)+su('s');
-  $('sRng').innerHTML=rng+su('st');
-
-  // Expressiveness label based on semitone range
-  const r=parseFloat(rng);
-  let expr,exprCol;
-  if(r<3){expr='Monotone';exprCol='#ff6b6b';}
-  else if(r<6){expr='Calm';exprCol='#ffb347';}
-  else if(r<10){expr='Natural';exprCol='#a8ff78';}
-  else if(r<15){expr='Expressive';exprCol='#00e5ff';}
-  else{expr='Very expressive';exprCol='#c4b5fd';}
-  $('sExpr').innerHTML=`<span style="color:${exprCol}">${expr}</span>`;
-
-  // Pattern
-  const res=analyzePattern(S.anPitch);
-  $('patIcon').textContent=res.icon;
-  $('patName').textContent=res.pattern;
-  $('patName').style.color=res.color;
-  $('patIcon').style.color=res.color;
-
-  // Store peak index for drawing
-  S.anPeakIdx=res.peakIdx;
-  drawAnalyze(); // redraw to show peak marker
+  if(S.tab==='analyze'){SMOOTHERS.forEach((sm,i)=>{const el=$('an-st-'+i);if(el)el.innerHTML=statsHTML(S.anSmooth[i]);});}
+  else{SMOOTHERS.forEach((sm,i)=>{const el=$('cmp-st-'+i);if(el)el.innerHTML=statsHTML(S.recSmooth[i]||S.refSmooth[i]);});}
 }
 
-// ═══════ PATTERNS — tone unit segmentation ═══════
-//
-// Strategy:
-// 1. Split voiced frames into "tone units" separated by unvoiced gaps
-// 2. Pick the dominant tone unit (highest mean pitch = most prominent)
-// 3. Within that unit, find the nucleus (peak F0)
-// 4. Measure movement AFTER the nucleus using % up/down steps
-//    and semitone delta from peak to end
-// 5. Also check pre-nucleus movement for Rise-Fall / Fall-Rise
-//
-function getToneUnits(data){
-  const units=[], gap=5; // frames of silence to split units
-  let cur=[], silCount=0;
-  data.forEach(d=>{
-    if(d.freq){cur.push(d);silCount=0;}
-    else{
-      silCount++;
-      if(silCount>=gap&&cur.length>=8){units.push(cur);cur=[];}
-    }
-  });
-  if(cur.length>=8)units.push(cur);
-  return units;
+function median(arr){const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(s.length/2)];}
+function resampleSemi(data,N){
+  const voiced=(data||[]).filter(d=>d.freq);if(voiced.length<2)return null;
+  const med=median(voiced.map(d=>d.freq));
+  const t0=voiced[0].time,t1=voiced[voiced.length-1].time,span=t1-t0;if(span<=0)return null;
+  const out=new Array(N).fill(null);
+  for(let i=0;i<N;i++){const t=t0+span*i/(N-1);let nearest=null,nd=Infinity;for(const d of voiced){const dd=Math.abs(d.time-t);if(dd<nd){nd=dd;nearest=d;}}if(nearest&&nd<span/N*2)out[i]=12*Math.log2(nearest.freq/med);}
+  return out;
 }
+function updateSimilarity(){/* similarity score removed */}
 
-function smoothArr(arr,w=4){
-  return arr.map((_,i)=>{
-    const sl=arr.slice(Math.max(0,i-w),i+w+1);
-    return avgArr(sl);
+// ════ PLAYERS ════
+function setupAudio(target,blob,dur){
+  const old=S[target+'Audio'];if(old)old.pause();
+  const el=new Audio(URL.createObjectURL(blob));S[target+'Audio']=el;
+  const fill=$(target+'Fill'),time=$(target+'Time');
+  el.addEventListener('timeupdate',()=>{const cur=el.currentTime,d=el.duration||dur;S.curTime=cur;if(fill)fill.style.width=(cur/d*100)+'%';if(time)time.textContent=fmtT(cur)+' / '+fmtT(d);});
+  el.addEventListener('play',()=>{setPlayIco(target,true);startFollow();});
+  el.addEventListener('pause',()=>{setPlayIco(target,false);stopFollow();});
+  el.addEventListener('ended',()=>{setPlayIco(target,false);stopFollow();drawActive();});
+}
+function fmtT(s){if(!isFinite(s))s=0;const m=Math.floor(s/60),ss=Math.floor(s%60);return m+':'+String(ss).padStart(2,'0');}
+window.togglePlay=function(t){const el=S[t+'Audio'];if(!el)return;if(el.paused){['an','ref','rec'].forEach(o=>{if(o!==t&&S[o+'Audio'])S[o+'Audio'].pause();});el.play();}else el.pause();};
+function setPlayIco(t,playing){const ico=$(t+'PlayIco'),txt=$(t+'PlayTxt');if(ico)ico.innerHTML=playing?'<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>':'<path d="M8 5v14l11-7z"/>';if(txt)txt.textContent=playing?'Pause':'Play';}
+window.seek=function(t,e){const el=S[t+'Audio'];if(!el)return;const r=e.currentTarget.getBoundingClientRect();el.currentTime=(e.clientX-r.left)/r.width*(el.duration||S[t+'Dur']);drawActive();};
+function startFollow(){stopFollow();function loop(){const a=['an','ref','rec'].map(t=>S[t+'Audio']).find(x=>x&&!x.paused);if(!a){return;}S.curTime=a.currentTime;drawActive();drawOverview();S.raf=requestAnimationFrame(loop);}S.raf=requestAnimationFrame(loop);}
+function stopFollow(){if(S.raf){cancelAnimationFrame(S.raf);S.raf=null;}}
+
+// ════ PROCESS an audio buffer into a target (an / ref / rec) ════
+function processBuffer(ab,target){
+  const sr=ab.sampleRate;const {ch}=trimSilence(ab.getChannelData(0),sr);
+  if(target==='an'){S.anFull={ch,sr};S.selA=S.selB=null;}
+  analyzeSegment(ch,sr,target);
+}
+function analyzeSegment(ch,sr,target){
+  S[target+'Wave']=ch;S[target+'Dur']=ch.length/sr;S[target+'Sr']=sr;
+  setupAudio(target,makeWavBlob(ch,sr),ch.length/sr);
+  const pb=$(target+'PlayBtn');if(pb)pb.disabled=false;
+  analyzePitch(ch,sr,pitch=>{
+    S[target+'Raw']=pitch;
+    S[target+'Smooth']=SMOOTHERS.map(sm=>sm.fn(pitch));
+    document.querySelectorAll('.empty').forEach(e=>e.style.display='none');
+    drawActive();updateStats();updateSimilarity();drawOverview();
   });
 }
 
-function analyzePattern(data){
-  const v=data.filter(d=>d.freq);
-  if(v.length<5)return{pattern:'?',peakIdx:-1,icon:'—',color:'#64748b',desc:'Not enough voiced audio.'};
-
-  // Get tone units and pick dominant one (highest mean pitch)
-  const units=getToneUnits(data);
-  let dominant=v; // fallback: all voiced frames
-  if(units.length>0){
-    dominant=units.reduce((best,u)=>{
-      return avgArr(u.map(d=>d.freq)) > avgArr(best.map(d=>d.freq)) ? u : best;
-    }, units[0]);
-  }
-
-  const fs=dominant.map(d=>d.freq);
-  const sfs=smoothArr(fs);
-  const mn=Math.min(...sfs), mx=Math.max(...sfs);
-  const totalRange=12*Math.log2(mx/mn);
-
-  if(totalRange<1.2){
-    return{pattern:'LEVEL',peakIdx:-1,icon:'→',color:'#94a3b8',
-      desc:'Flat pitch — no significant tonal movement in the dominant unit.'};
-  }
-
-  // Find nucleus (peak) in smoothed dominant unit
-  let peakIdx=0;
-  for(let i=1;i<sfs.length;i++) if(sfs[i]>sfs[peakIdx]) peakIdx=i;
-
-  // Map peakIdx back to original data index
-  const globalPeakIdx=data.indexOf(dominant[peakIdx]);
-
-  // Post-peak analysis
-  const post=sfs.slice(peakIdx);
-  const pre=sfs.slice(0,peakIdx+1);
-  let upSteps=0,downSteps=0;
-  for(let i=1;i<post.length;i++){
-    const d=12*Math.log2(post[i]/post[i-1]);
-    if(d>0.15)upSteps++;else if(d<-0.15)downSteps++;
-  }
-  const postTotal=Math.max(1,upSteps+downSteps);
-  const pctDown=downSteps/postTotal;
-  const pctUp=upSteps/postTotal;
-  const nucDelta=12*Math.log2(sfs[sfs.length-1]/sfs[peakIdx]);
-  const preDelta=sfs.length>1?12*Math.log2(sfs[peakIdx]/sfs[0]):0;
-
-  let pattern,icon,color,desc;
-
-  if(nucDelta<=-5&&pctDown>=0.55){
-    if(preDelta>=3&&peakIdx>sfs.length*0.2){
-      pattern='RISE-FALL';icon='↗↘';color='#ffb347';
-      desc='Pitch rises to a peak then falls — common with emphasis and exclamations.';
-    } else {
-      const isFull=totalRange>8||nucDelta<-8;
-      pattern=isFull?'FULL FALL':'FALL';icon=isFull?'⤵':'↘';color='#ff6b6b';
-      desc=isFull?'Wide falling pitch — strong statement, authority or definitive closure.'
-                 :'Falling pitch at the end — typical of statements and Wh- questions.';
-    }
-  } else if(nucDelta>=4&&pctUp>=0.5){
-    if(preDelta<=-3&&peakIdx>sfs.length*0.3){
-      pattern='FALL-RISE';icon='↘↗';color='#c4b5fd';
-      desc='Pitch dips then rises — signals reservation, contrast or an unfinished thought.';
-    } else {
-      const isFull=totalRange>8||nucDelta>8;
-      pattern=isFull?'FULL RISE':'RISE';icon=isFull?'⤴':'↗';color='#a8ff78';
-      desc=isFull?'Wide rising pitch — strong surprise or emphatic yes/no question.'
-                 :'Rising pitch — typical of yes/no questions or seeking confirmation.';
-    }
-  } else if(Math.abs(nucDelta)<3&&pctDown<0.6&&pctUp<0.6){
-    pattern='LEVEL';icon='→';color='#94a3b8';
-    desc='Relatively flat pitch after the peak — may indicate listing or continuation.';
-  } else if(nucDelta<-2){
-    pattern='FALL';icon='↘';color='#ff6b6b';
-    desc='Falling pitch — typical of statements, certainty and finality.';
-  } else {
-    pattern='RISE';icon='↗';color='#a8ff78';
-    desc='Rising pitch — signals a question or that something more is expected.';
-  }
-
-  return{pattern,peakIdx:globalPeakIdx,icon,color,desc};
-}
-
-// Simple wrapper — returns just the pattern string (for history/compare)
-function detectPatterns(data){
-  return[analyzePattern(data).pattern];
-}
-
-// ═══════ COMPARE ═══════
-function pearson(a,b){
-  const n=a.length,ma=avgArr(a),mb=avgArr(b);
-  let num=0,da=0,db=0;
-  for(let i=0;i<n;i++){num+=(a[i]-ma)*(b[i]-mb);da+=(a[i]-ma)**2;db+=(b[i]-mb)**2;}
-  return num/(Math.sqrt(da)*Math.sqrt(db)+1e-10);
-}
-
-function exprLabel(rng){
-  const r=parseFloat(rng);
-  if(r<3)return'Monotone';if(r<6)return'Calm';if(r<10)return'Natural';
-  if(r<15)return'Expressive';return'Very expressive';
-}
-
-function tryCompare(){
-  if(!S.refPitch.length||!S.recPitch.length)return;
-  const rv=S.refPitch.filter(d=>d.freq),cv=S.recPitch.filter(d=>d.freq);
-  if(!rv.length||!cv.length)return;
-
-  // Peak-align: shift rec pitch times so peaks coincide with ref peak time
-  const refRes=analyzePattern(S.refPitch);
-  const recRes=analyzePattern(S.recPitch);
-  let alignedRec=S.recPitch;
-  if(refRes.peakIdx>=0&&recRes.peakIdx>=0){
-    const refVoiced=S.refPitch.filter(d=>d.freq);
-    const recVoiced=S.recPitch.filter(d=>d.freq);
-    if(refRes.peakIdx<refVoiced.length&&recRes.peakIdx<recVoiced.length){
-      const refPeakT=refVoiced[refRes.peakIdx].time;
-      const recPeakT=recVoiced[recRes.peakIdx].time;
-      const shift=refPeakT-recPeakT;
-      alignedRec=S.recPitch.map(d=>({...d,time:d.time+shift}));
-    }
-  }
-
-  // Normalize both to N points for shape comparison
-  const N=60;
-  function norm(arr){return Array.from({length:N},(_,i)=>arr[Math.floor(i/N*arr.length)].freq);}
-  const rn=norm(rv),cn=norm(cv);
-  const rm=avgArr(rn),cm=avgArr(cn);
-  const rs=rn.map(f=>12*Math.log2(f/rm)),cs=cn.map(f=>12*Math.log2(f/cm));
-  const sim=Math.round(Math.max(0,pearson(rs,cs))*100);
-
-  const rfs=rv.map(d=>d.freq),cfs=cv.map(d=>d.freq);
-  const rRng=(12*Math.log2(Math.max(...rfs)/Math.min(...rfs))).toFixed(1);
-  const cRng=(12*Math.log2(Math.max(...cfs)/Math.min(...cfs))).toFixed(1);
-
-  $('cpanel').classList.add('show');
-  $('simScore').textContent=sim+'%';
-  $('simFill').style.width=sim+'%';
-  $('cRefPat').textContent=refRes.icon+' '+refRes.pattern;
-  $('cRefPat').style.color=refRes.color;
-  $('cRecPat').textContent=recRes.icon+' '+recRes.pattern;
-  $('cRecPat').style.color=recRes.color;
-  $('cRefRng').textContent=rRng+' st';
-  $('cRecRng').textContent=cRng+' st';
-  $('cRefExpr').textContent=exprLabel(rRng);
-  $('cRecExpr').textContent=exprLabel(cRng);
-
-  let fb='';
-  if(sim>=80)fb='🎉 Excellent! Your pitch contour matches the reference very well.';
-  else if(sim>=60)fb='👍 Good. Your curve follows the general shape. Focus on matching rises and falls more precisely.';
-  else if(sim>=40)fb='📈 In progress. There are similarities but important differences. Listen several times and focus on the pitch movement.';
-  else fb='🔄 Keep practicing. The curves differ quite a bit. Try to imitate the red curve: when it rises, when it falls, and by how much.';
-  if(refRes.pattern!==recRes.pattern&&refRes.pattern!=='?'&&recRes.pattern!=='?')
-    fb+=` Reference: ${refRes.icon} ${refRes.pattern}. Your voice: ${recRes.icon} ${recRes.pattern}.`;
-  if(Math.abs(parseFloat(cRng)-parseFloat(rRng))>3)
-    fb+=` Your pitch range (${cRng} st) differs from the reference (${rRng} st).`;
-  $('fbText').textContent=fb;
-}
-
-// ═══════ PLAYERS ═══════
-// ── RAF-based playhead: runs at 60fps instead of timeupdate's ~4fps ──
-const phRAF={an:null,ref:null,rec:null};
-function startPlayheadRAF(id){
-  if(phRAF[id])cancelAnimationFrame(phRAF[id]);
-  const ids={an:{fill:'pAnFill',time:'pAnTime'},ref:{fill:'pRefFill',time:'pRefTime'},rec:{fill:'pRecFill',time:'pRecTime'}};
-  const d=ids[id];
-  const phId=(id==='an')?'phA':'phC';
-  const caId=(id==='an')?'caA':'caC';
-  function loop(){
-    const el=S[id+'Audio'];
-    if(!el||el.paused||el.ended)return;
-    const cur=el.currentTime,dur=el.duration||1;
-    const p=cur/dur*100;
-    if($(d.fill))$(d.fill).style.width=p+'%';
-    if($(d.time))$(d.time).textContent=fmtT(cur)+'/'+fmtT(dur);
-    // Playhead position
-    const ph=$(phId),ca=$(caId);
-    if(ph&&ca){
-      const audioDur=(id==='an')?S.anDur:Math.max(S.refDur,S.recDur,0.1);
-      ph.style.left=(cur/audioDur)*ca.clientWidth+'px';
-      ph.style.display='block';
-    }
-    phRAF[id]=requestAnimationFrame(loop);
-  }
-  phRAF[id]=requestAnimationFrame(loop);
-}
-function stopPlayheadRAF(id){
-  if(phRAF[id]){cancelAnimationFrame(phRAF[id]);phRAF[id]=null;}
-  const phId=(id==='an')?'phA':'phC';
-  const ph=$(phId);if(ph)ph.style.display='none';
-}
-
-function setupPlayer(blob,id){
-  const el=new Audio(URL.createObjectURL(blob));
-  S[id+'Audio']=el;
-  const ids={an:{btn:'pAnBtn',ico:'pAnIco',fill:'pAnFill',time:'pAnTime'},
-             ref:{btn:'pRefBtn',ico:'pRefIco',fill:'pRefFill',time:'pRefTime'},
-             rec:{btn:'pRecBtn',ico:'pRecIco',fill:'pRecFill',time:'pRecTime'}};
-  const d=ids[id];
-  $(d.btn).disabled=false;
-  // timeupdate only for progress bar (reliable); playhead runs via rAF
-  el.addEventListener('timeupdate',()=>{
-    const p=el.duration?el.currentTime/el.duration*100:0;
-    if($(d.fill))$(d.fill).style.width=p+'%';
-    if($(d.time))$(d.time).textContent=fmtT(el.currentTime)+'/'+fmtT(el.duration||0);
-  });
-  el.addEventListener('play',()=>startPlayheadRAF(id));
-  el.addEventListener('pause',()=>stopPlayheadRAF(id));
-  el.addEventListener('ended',()=>{setIcon(id,false);stopPlayheadRAF(id);});
-}
-function play(id){
-  const el=S[id+'Audio'];if(!el)return;
-  if(el.paused){el.play();setIcon(id,true);}else{el.pause();setIcon(id,false);}
-}
-function setIcon(id,playing){
-  const map={an:'pAnIco',ref:'pRefIco',rec:'pRecIco'};
-  const ico=$(map[id]);if(!ico)return;
-  ico.innerHTML=playing
-    ?'<rect x="2" y="1" width="3" height="8" fill="currentColor"/><rect x="6" y="1" width="3" height="8" fill="currentColor"/>'
-    :'<polygon points="2,1 9,5 2,9" fill="currentColor"/>';
-}
-function seek(id,e){
-  const el=S[id+'Audio'];
-  const map={an:'pAnBtn',ref:'pRefBtn',rec:'pRecBtn'};
-  const track=$(map[id]).parentElement.querySelector('.ptrack');
-  if(!el||!track)return;
-  const r=track.getBoundingClientRect();
-  el.currentTime=(e.clientX-r.left)/r.width*(el.duration||0);
-}
-
-// ═══════ FILE INPUTS ═══════
-$('fAnal').addEventListener('change',async e=>{
-  const f=e.target.files[0];if(!f)return;
-  setupPlayer(f,'an');
-  $('anFname').textContent=f.name;$('anFname').className='fname';
-  setStatus('ANALYZING...','on');hideAlert();
+// ════ RECORDING (target = an or rec) ════
+// Keep the mic stream open after the first grant so the browser doesn't re-prompt each time.
+async function getMic(){
+  if(S.micStream&&S.micStream.active&&S.micAnalyser)return S.micStream;
+  S.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
   const ac=new(window.AudioContext||window.webkitAudioContext)();
-  try{const ab=await ac.decodeAudioData(await f.arrayBuffer());analyzeBuffer(ab,'an');}
-  catch{showAlert('Audio format not supported.','err');setStatus('ERROR');}
-  e.target.value='';
-});
-
-$('fRef').addEventListener('change',async e=>{
-  const f=e.target.files[0];if(!f)return;
-  setupPlayer(f,'ref');
-  $('refFname').textContent=f.name;$('refFname').className='fname';
-  setStatus('ANALYZING REFERENCE...','on');hideAlert();
-  const ac=new(window.AudioContext||window.webkitAudioContext)();
-  try{const ab=await ac.decodeAudioData(await f.arrayBuffer());analyzeBuffer(ab,'ref');}
-  catch{showAlert('Audio format not supported.','err');setStatus('ERROR');}
-  e.target.value='';
-});
-
-// ═══════ RECORDING — ANALYZE ═══════
-$('bRec').addEventListener('click',async()=>{
+  if(ac.state==='suspended'){try{await ac.resume();}catch(_){}}
+  const src=ac.createMediaStreamSource(S.micStream);
+  const an=ac.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=0;src.connect(an);
+  // Some browsers only pump data through an analyser if the graph reaches the destination.
+  // A silent gain node keeps the graph "live" without any sound coming out.
+  const g=ac.createGain();g.gain.value=0;an.connect(g);g.connect(ac.destination);
+  S.micCtx=ac;S.micAnalyser=an;S.micGain=g;S.micSr=ac.sampleRate;S.micBuf=new Float32Array(an.fftSize);
+  return S.micStream;
+}
+// Small mic-level witness (a red dot that grows/shrinks with your voice). Runs while recording or live.
+function micMeterLoop(){
+  if(!S.micAnalyser||(!S.isRec&&!S.live)){['micLevel','micLevelAn'].forEach(id=>{const el=$(id);if(el)el.classList.remove('on');});S.meterRaf=null;return;}
+  S.micAnalyser.getFloatTimeDomainData(S.micBuf);
+  const e=rms(S.micBuf);const sc=Math.min(1,Math.max(0.5,0.5+e*6));
+  ['micBar','micBarAn'].forEach(id=>{const b=$(id);if(b)b.style.transform='scale('+sc.toFixed(3)+')';});
+  ['micLevel','micLevelAn'].forEach(id=>{const el=$(id);if(el)el.classList.add('on');});
+  S.meterRaf=requestAnimationFrame(micMeterLoop);
+}
+function startMeter(){if(!S.meterRaf)micMeterLoop();}
+async function startRec(target){
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    S.chunksAn=[];
-    const ac=new(window.AudioContext||window.webkitAudioContext)();
-    S.acAn=ac;
-    const anlzr=ac.createAnalyser();anlzr.fftSize=2048;
-    ac.createMediaStreamSource(stream).connect(anlzr);
-    const mr=new MediaRecorder(stream);S.mrAn=mr;
-    mr.ondataavailable=ev=>{if(ev.data.size>0)S.chunksAn.push(ev.data);};
-    mr.onstop=async()=>{
-      stream.getTracks().forEach(t=>t.stop());
-      const blob=new Blob(S.chunksAn,{type:'audio/webm'});
-      setupPlayer(blob,'an');
-      $('anFname').textContent='recording.webm';$('anFname').className='fname';
-      setStatus('ANALYZING...','on');
-      try{const ab=await ac.decodeAudioData(await blob.arrayBuffer());analyzeBuffer(ab,'an');}
-      catch{showAlert('Could not decode recording.','err');setStatus('ERROR');}
-    };
-    mr.start(100);S.isRecAn=true;
-    $('bRec').disabled=true;$('bStop').disabled=false;
-    $('emA').style.display='none';
-    setStatus('RECORDING...','rec');hideAlert();
+    const stream=await getMic();
+    S.chunks=[];const mr=new MediaRecorder(stream);S.mr=mr;S.isRec=true;
+    mr.ondataavailable=ev=>{if(ev.data.size>0)S.chunks.push(ev.data);};
+    mr.onstop=async()=>{const blob=new Blob(S.chunks,{type:'audio/webm'});const buf=await blob.arrayBuffer();const ac=new(window.AudioContext||window.webkitAudioContext)();const ab=await ac.decodeAudioData(buf);processBuffer(ab,target);};
+    mr.start(100);
+    startMeter();
+    const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');
+    if(recBtn)recBtn.classList.add('live');
+    if(recTxt)recTxt.textContent='Stop';
+  }catch{alert('No microphone access');}
+}
+function stopRec(target){
+  if(S.mr&&S.isRec){S.isRec=false;S.mr.stop();const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');if(recBtn)recBtn.classList.remove('live');if(recTxt)recTxt.textContent='Record';}
+}
 
-    const lb=new Float32Array(anlzr.frequencyBinCount);
-    const fMin=parseInt($('fMin').value),fMax=parseInt($('fMax').value);
-    function live(){
-      if(!S.isRecAn)return;
-      anlzr.getFloatTimeDomainData(lb);
-      const cv=$('cA'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
-      ctx.fillStyle='#0a0e1a';ctx.fillRect(0,0,W,H);
-      ctx.strokeStyle='rgba(0,229,255,.55)';ctx.lineWidth=1.5;ctx.beginPath();
-      for(let i=0;i<lb.length;i++){const x=i/lb.length*W,y=(1-lb[i])*H/2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
-      ctx.stroke();
-      const f=detectPitch(lb,ac.sampleRate,fMin,fMax);
-      // live F0 display removed (sCur/sNote no longer in DOM)
-      S.anlAnim=requestAnimationFrame(live);
-    }
-    live();
-  }catch{showAlert('Could not access microphone. Check permissions.','err');}
-});
-$('bStop').addEventListener('click',()=>{
-  if(!S.isRecAn)return;
-  S.isRecAn=false;cancelAnimationFrame(S.anlAnim);
-  S.mrAn.stop();$('bRec').disabled=false;$('bStop').disabled=true;
-  setStatus('PROCESSING...','on');
-});
-
-// ═══════ RECORDING — COMPARE ═══════
-$('bRecCmp').addEventListener('click',async()=>{
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    S.chunksCmp=[];
-    const mr=new MediaRecorder(stream);S.mrCmp=mr;
-    mr.ondataavailable=ev=>{if(ev.data.size>0)S.chunksCmp.push(ev.data);};
-    mr.onstop=async()=>{
-      stream.getTracks().forEach(t=>t.stop());
-      const blob=new Blob(S.chunksCmp,{type:'audio/webm'});
-      setupPlayer(blob,'rec');
-      $('recFname').textContent='my-voice.webm';$('recFname').className='fname';
-      setStatus('ANALYZING...','on');
-      const ac=new(window.AudioContext||window.webkitAudioContext)();
-      try{const ab=await ac.decodeAudioData(await blob.arrayBuffer());analyzeBuffer(ab,'rec');}
-      catch{showAlert('Could not decode recording.','err');setStatus('ERROR');}
-    };
-    mr.start(100);S.isRecCmp=true;
-    $('bRecCmp').disabled=true;$('bStopCmp').disabled=false;
-    setStatus('RECORDING...','rec');hideAlert();
-  }catch{showAlert('Could not access microphone. Check permissions.','err');}
-});
-$('bStopCmp').addEventListener('click',()=>{
-  if(!S.isRecCmp)return;
-  S.isRecCmp=false;S.mrCmp.stop();
-  $('bRecCmp').disabled=false;$('bStopCmp').disabled=true;
-  setStatus('PROCESSING...','on');
-});
-
-// ═══════ CLEAR ═══════
-$('bClr').addEventListener('click',()=>{
-  S.anPitch=[];S.anWave=null;S.anDur=0;
-  if(S.anAudio)S.anAudio.pause();
-  $('bClr').disabled=true;
-  $('emA').style.display='flex';$('anFname').textContent='no audio';$('anFname').className='noaudio';
-  $('pAnBtn').disabled=true;$('pAnFill').style.width='0%';$('pAnTime').textContent='0:00';
-  $('sDur').innerHTML='—'+su('s');$('sRng').innerHTML='—'+su('st');
-  $('sExpr').textContent='—';
-  $('patIcon').textContent='—';$('patIcon').style.color='';
-  $('patName').textContent='No analysis yet';$('patName').style.color='';
-  setStatus('READY');hideAlert();
-  hidePlayhead('an');resizeAll();drawAnalyze();
-});
-$('bClrCmp').addEventListener('click',()=>{
-  S.refPitch=[];S.refWave=null;S.refDur=0;
-  S.recPitch=[];S.recWave=null;S.recDur=0;
-  if(S.refAudio)S.refAudio.pause();if(S.recAudio)S.recAudio.pause();
-  $('refFname').textContent='no audio';$('refFname').className='noaudio';
-  $('recFname').textContent='no audio';$('recFname').className='noaudio';
-  $('pRefBtn').disabled=true;$('pRecBtn').disabled=true;
-  $('pRefFill').style.width='0%';$('pRecFill').style.width='0%';
-  $('emC').style.display='flex';$('cpanel').classList.remove('show');
-  $('bSave').disabled=true;$('bClrCmp').disabled=true;
-  hidePlayhead('ref');hidePlayhead('rec');resizeAll();drawCompare();
-});
-
-// ═══════ HISTORY ═══════
-$('bSave').addEventListener('click',()=>{
-  if(!S.recPitch.length)return;
-  const v=S.recPitch.filter(d=>d.freq),fs=v.map(d=>d.freq);
-  const sim=parseInt($('simScore').textContent)||0;
-  const pats=detectPatterns(S.recPitch);
-  S.hist.push({id:Date.now(),time:new Date().toLocaleTimeString(),
-    mean:avgArr(fs).toFixed(1),range:(12*Math.log2(Math.max(...fs)/Math.min(...fs))).toFixed(1),
-    pats:pats.join(', '),sim});
-  renderHist();showAlert('Attempt saved to history.','ok');
-});
-function renderHist(){
-  const l=$('hlist');
-  if(!S.hist.length){l.innerHTML='<span class="hempty">No attempts saved yet.</span>';return;}
-  l.innerHTML='';
-  [...S.hist].reverse().forEach((it,i)=>{
-    const sc=it.sim||0,col=sc>=80?'#a8ff78':sc>=60?'#ffb347':'#ff6b6b';
-    const d=document.createElement('div');d.className='hitem';
-    d.innerHTML=`<span class="hnum">#${S.hist.length-i}</span>
-      <span style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);min-width:52px">${it.time}</span>
-      <div class="hbw"><div class="hbb"><div class="hbf" style="width:${sc}%;background:${col}"></div></div></div>
-      <span class="hscore" style="color:${col}">${sc}%</span>
-      <span class="hpat">${it.pats||'—'}</span>
-      <span style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted)">${it.mean}Hz</span>
-      <button class="hbtn" onclick="delHist(${it.id})">✕</button>`;
-    l.appendChild(d);
+// ════ BUILD CARDS ════
+function buildAnalyzeStack(){
+  const stack=$('anStack');if(!stack)return;stack.innerHTML='';
+  SMOOTHERS.forEach((sm,i)=>{
+    const card=document.createElement('div');card.className='card'+(sm.id===S.sel?' sel':'');card.id='an-card-'+i;
+    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Pitch</div><div class="cidea">F0 · Hz · drag on the graph to isolate a part</div></div></div><div class="cv-area"><canvas id="an-cv-${i}"></canvas><canvas id="an-sel-${i}" class="sel-layer"></canvas><div class="empty" id="an-em-${i}">Record or load audio</div></div><div class="seltools" id="an-seltools"><span class="selinfo" id="an-selinfo">—</span><button class="primary" id="an-isolate">Isolate &amp; analyse</button><button id="an-toref">Compare with my voice</button><button id="an-clearsel">Clear</button></div><div class="ov-area"><canvas id="an-ov-${i}"></canvas></div><div class="stats" id="an-st-${i}"><span>—</span></div>`;
+    stack.appendChild(card);
   });
 }
-function delHist(id){S.hist=S.hist.filter(h=>h.id!==id);renderHist();}
-function clearHist(){S.hist=[];renderHist();}
+function buildCompareStack(){
+  const stack=$('cmpStack');if(!stack)return;stack.innerHTML='';
+  SMOOTHERS.forEach((sm,i)=>{
+    const card=document.createElement('div');card.className='card'+(sm.id===S.sel?' sel':'');card.id='cmp-card-'+i;
+    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Comparison</div><div class="cidea">reference vs your voice</div></div></div><div class="cv-area"><canvas id="cmp-cv-${i}"></canvas><div class="empty" id="cmp-em-${i}">Load a reference and record your voice</div></div><div class="ov-area"><canvas id="cmp-ov-${i}"></canvas></div><div class="stats" id="cmp-st-${i}"><span>—</span></div>`;
+    stack.appendChild(card);
+  });
+}
 
+// ════ TABS ════
+function redraw(){drawActive();updateStats();drawOverview();}
+function switchTab(t){
+  if(S.live&&t!=='compare')stopLive();
+  S.tab=t;
+  document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');});
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  $('panel-'+t).classList.add('active');
+  setTimeout(redraw,50);
+}
 
-// ═══════ TOOLTIP ═══════
-$('cA').addEventListener('mousemove',e=>{
-  if(!S.anPitch.length)return;
-  const r=e.target.getBoundingClientRect(),x=e.clientX-r.left;
-  const t=x/e.target.width*S.anDur;
-  const n=S.anPitch.reduce((b,d)=>Math.abs(d.time-t)<Math.abs(b.time-t)?d:b);
-  const tt=$('tt');
-  if(n.freq){
-    tt.style.display='block';tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-8)+'px';
-    tt.textContent=`t=${n.time.toFixed(3)}s  F0=${n.freq.toFixed(1)}Hz  ${freqToNote(n.freq)}`;
-  }else tt.style.display='none';
-});
-$('cA').addEventListener('mouseleave',()=>$('tt').style.display='none');
+// ════ EVENTS ════
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+$('anFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const buf=await f.arrayBuffer();const ac=new(window.AudioContext||window.webkitAudioContext)();try{const ab=await ac.decodeAudioData(buf);processBuffer(ab,'an');}catch{alert('Unsupported format');}e.target.value='';});
+$('refFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const buf=await f.arrayBuffer();const ac=new(window.AudioContext||window.webkitAudioContext)();try{const ab=await ac.decodeAudioData(buf);processBuffer(ab,'ref');}catch{alert('Unsupported format');}e.target.value='';});
+$('anRecBtn').addEventListener('click',()=>S.isRec?stopRec('an'):startRec('an'));
+$('recRecBtn').addEventListener('click',()=>S.isRec?stopRec('rec'):startRec('rec'));
+$('fMin').addEventListener('input',function(){$('fMinV').textContent=this.value+'Hz';redraw();});
+$('fMax').addEventListener('input',function(){$('fMaxV').textContent=this.value+'Hz';redraw();});
+$('winSec').addEventListener('input',function(){$('winSecV').textContent=parseFloat(this.value).toFixed(1)+'s';redraw();});
+window.addEventListener('resize',()=>setTimeout(()=>{drawActive();drawOverview();},60));
 
-// (init handled above)
+// ════ BOOT ════
+(function checkSupport(){
+  const hasAudioCtx=!!(window.AudioContext||window.webkitAudioContext);
+  const hasMic=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  if(!hasAudioCtx){
+    document.querySelectorAll('.empty').forEach(e=>{e.textContent='Your browser does not support the Web Audio API. Try an up-to-date Chrome, Edge or Firefox.';});
+  } else if(!hasMic){
+    [...document.querySelectorAll('.btn-rec')].forEach(b=>{b.disabled=true;b.title='Recording is unavailable in this browser — you can load a file instead';});
+  }
+})();
+buildAnalyzeStack();
+buildCompareStack();
+setupSelection();
+$('an-isolate').addEventListener('click',isolateSelection);
+$('an-toref').addEventListener('click',selectionToReference);
+$('an-clearsel').addEventListener('click',()=>{S.selA=S.selB=null;drawSelectionLayer();$('an-seltools').classList.remove('show');});
+$('liveBtn').addEventListener('click',toggleLive);
+['an-ov-0','cmp-ov-0'].forEach(id=>{const ov=$(id);if(ov)ov.addEventListener('click',e=>{const t=S.tab==='analyze'?'an':(S.recWave?'rec':'ref');const au=S[t+'Audio'],dur=S[t+'Dur'];if(!au||!dur)return;const r=ov.getBoundingClientRect();au.currentTime=Math.max(0,Math.min(dur,((e.clientX-r.left)/r.width)*dur));drawActive();drawOverview();});});
+
 </script>
 </body>
 </html>
