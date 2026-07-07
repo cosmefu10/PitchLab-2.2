@@ -29,6 +29,10 @@ header{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;alig
 main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 
 
+.upload{border:1.5px dashed var(--border2);border-radius:5px;padding:9px 15px;display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:.7rem;font-weight:700;color:var(--text2);transition:all .15s;}
+.upload:hover{border-color:var(--cyan);color:var(--cyan);}
+.upload input{display:none;}
+
 .pbar{height:2px;background:var(--border);overflow:hidden;display:none;margin-bottom:14px;border-radius:2px;}
 .pfill{height:100%;background:var(--cyan);width:0%;transition:width .08s;}
 
@@ -131,6 +135,7 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
       <button class="btn btn-rec" id="anRecBtn" title="Record" aria-label="Record audio"><span id="anRecTxt">Record</span></button>
       <button class="btn btn-play" id="anPlayBtn" onclick="togglePlay('an')" disabled title="Play" aria-label="Play audio"><svg id="anPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="anPlayTxt">Play</span></button>
       <label class="upload" style="margin:0"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load<input type="file" id="anFile" accept="audio/*"></label>
+      <button class="live-btn" id="liveBtn" title="See your pitch live while you speak">● Live practice</button>
       <div class="ptrack" onclick="seek('an',event)"><div class="pfillbar" id="anFill" style="background:var(--cyan)"></div></div>
       <span class="ptime" id="anTime">0:00 / 0:00</span>
     </div>
@@ -156,7 +161,6 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
     <div class="cmp-legend">
       <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>Reference</div>
       <div class="leg-item"><div class="leg-dot" style="background:var(--cyan)"></div>Your voice</div>
-      <button class="live-btn" id="liveBtn" title="Practise live against the reference">● Live practice</button>
     </div>
     <div class="stack" id="cmpStack"></div>
   </div>
@@ -440,8 +444,8 @@ window.selectionToReference=function(){
   analyzeSegment(part,sr,'ref');
   switchTab('compare');
 };
-// ════ LIVE PRACTICE (Compare) — see your pitch in real time over the reference,
-//   try as many times as you want without the record→analyse→repeat cycle. ════
+// ════ LIVE PRACTICE (Practice tab) — a real-time pitch mirror: speak and watch
+//   your contour scroll, without the record→analyse→repeat cycle. ════
 async function toggleLive(){
   if(S.live){stopLive();return;}
   try{
@@ -449,7 +453,7 @@ async function toggleLive(){
     if(S.micCtx&&S.micCtx.state==='suspended'){try{await S.micCtx.resume();}catch(_){}}
     S.liveData=[];S.liveT0=performance.now();S.live=true;
     $('liveBtn').classList.add('on');$('liveBtn').textContent='● Stop live';
-    document.querySelectorAll('#cmpStack .empty').forEach(e=>e.style.display='none');
+    document.querySelectorAll('#panel-analyze .empty').forEach(e=>e.style.display='none');
     liveLoop();
   }catch{alert('No microphone access');}
 }
@@ -470,17 +474,12 @@ function liveLoop(){
   S.liveRaf=requestAnimationFrame(liveLoop);
 }
 function drawLive(){
-  // your live pitch (smoothed with the same method) scrolls in a moving window;
-  // the reference is stretched across the same window as an always-visible target shape.
+  // pitch mirror: your live pitch (smoothed with the same production method)
+  // scrolls across the Practice graph in a moving window while you speak.
   let smoothed;try{smoothed=SMOOTHERS[0].fn(S.liveData.map(d=>({...d})));}catch(_){smoothed=S.liveData.map(d=>({...d}));}
   const last=S.liveData.length?S.liveData[S.liveData.length-1].time:0;
-  const winSec=parseFloat($('winSec').value);
-  const dur=Math.max(last,winSec);
-  const {tStart,tEnd}=windowFor(dur,last);
-  let refGuide=[];
-  const ref=S.refSmooth[0]||[];const rv=ref.filter(d=>d.freq!=null);
-  if(rv.length>1){const t0=rv[0].time,t1=rv[rv.length-1].time,span=(t1-t0)||1;refGuide=ref.map(d=>({time:tStart+((d.time-t0)/span)*(tEnd-tStart),freq:d.freq}));}
-  drawGraph('cmp-cv-0',[{data:refGuide,color:'#ff6b6b'},{data:smoothed,color:'#00e5ff'}],dur,last);
+  const dur=Math.max(last,parseFloat($('winSec').value));
+  drawGraph('an-cv-0',[{data:smoothed,color:'#00e5ff'}],dur,last);
 }
 
 
@@ -589,7 +588,7 @@ function buildCompareStack(){
 // ════ TABS ════
 function redraw(){drawActive();updateStats();drawOverview();}
 function switchTab(t){
-  if(S.live&&t!=='compare')stopLive();
+  if(S.live&&t!=='analyze')stopLive();
   S.tab=t;
   document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');});
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
