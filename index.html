@@ -63,8 +63,8 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 .chead{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;background:var(--panel2);}
 .chead-main{flex:1;min-width:0;}
 .cname{font-family:var(--mono);font-size:.76rem;font-weight:700;color:var(--text);margin-bottom:2px;}
-.cidea{font-size:.66rem;color:var(--cyan);font-weight:600;}
-.cv-area{position:relative;height:312px;}
+.cidea{font-size:.66rem;color:var(--cyan);font-weight:600;}.cidea:empty{display:none}
+.cv-area{position:relative;height:406px;}
 .cv-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
 .cv-area canvas.sel-layer{cursor:crosshair;z-index:3;}
 .ov-area{position:relative;height:54px;border-top:1px solid var(--border);background:#0b0e14;}
@@ -103,6 +103,18 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 .btn-rec{font-size:.95rem;padding:13px 22px;border-radius:14px}.btn-rec span:before{content:'🎤 ';filter:grayscale(.1)}.player{border-radius:12px}.plabel{font-size:.68rem!important}.upload{border-radius:10px;padding:11px 15px}.card{border-radius:13px}.chead{padding:13px 16px}.cname{font-size:.82rem}.cidea{font-size:.72rem;color:var(--text2)}.cidea b{color:var(--cyan)}
 @media(max-width:720px){main{padding:12px}.player{align-items:stretch;flex-wrap:wrap}.ptrack{flex-basis:100%}.btn-rec{width:100%;justify-content:center}}
 
+.view-control{display:flex;align-items:center;gap:11px;margin:0 auto 14px;padding:10px 13px;max-width:1105px;border:1px solid var(--border);border-radius:11px;background:var(--panel);color:var(--text2);font:600 10px var(--mono)}.view-control label{color:var(--text3);letter-spacing:.5px;white-space:nowrap}.view-control input{accent-color:var(--cyan)}.view-control>.time-window{flex:1;min-width:120px}.view-control output{min-width:45px;text-align:right;color:var(--cyan);font-weight:700}.axis-setting{display:flex;align-items:center;gap:7px;padding-left:11px;border-left:1px solid #243448}.axis-setting input{width:86px;min-width:70px}.axis-setting output{min-width:42px}
+@media(max-width:720px){.view-control{flex-wrap:wrap}.view-control>label{flex-basis:100%}.axis-setting{flex:1;padding-left:0;border-left:0}.axis-setting input{flex:1}}
+@media(max-width:720px){
+  header{padding:10px 12px;gap:8px}.logo-block img{height:50px!important}.logo-tag{letter-spacing:1px}.tabs{margin-left:auto}.tab{min-height:44px;padding:9px 13px}
+  main{padding:12px 10px 42px}.cv-area{height:clamp(340px,52svh,406px)}
+  .player{padding:11px;gap:9px}.player .plabel{flex-basis:100%;min-width:0}.btn,.upload,.live-btn{min-height:44px;justify-content:center;touch-action:manipulation}.btn-rec{flex:1 0 100%}.btn-play,.upload,.live-btn{flex:1 1 88px}.ptrack{flex:1 1 calc(100% - 90px);min-height:12px}.ptime{flex:0 0 80px}
+  .view-control{padding:11px;gap:8px}.view-control input[type="range"]{min-height:32px}.view-control>.time-window{min-width:0}.seltools.show{flex-wrap:wrap}.seltools .selinfo{flex-basis:100%}.seltools button{min-height:42px;flex:1 1 120px}.ov-area{height:62px}
+}
+@media(max-width:520px){
+  .axis-setting{flex:1 1 100%;width:100%}.axis-setting label{flex:0 0 50px}.axis-setting input{min-width:0}.axis-setting output{flex:0 0 48px}.chead{padding:11px 13px}.stats{gap:9px;padding:7px 11px}.empty{padding:0 14px}
+}
+
 </style>
 </head>
 <body>
@@ -118,15 +130,19 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 </header>
 
 <main>
+  <!-- Keep the original wide detection range separate from the visible graph scale. -->
   <div class="hidden-settings" style="display:none" aria-hidden="true">
-    <input type="range" id="fMin" min="50" max="150" value="80" step="5" aria-label="Minimum F0">
-    <span id="fMinV">80Hz</span>
-    <input type="range" id="fMax" min="200" max="500" value="300" step="10" aria-label="Maximum F0">
-    <span id="fMaxV">300Hz</span>
-    <input type="range" id="winSec" min="1.5" max="6" value="2" step="0.5" aria-label="Window length">
-    <span id="winSecV">2.0s</span>
+    <input type="hidden" id="fMin" value="50">
+    <input type="hidden" id="fMax" value="500">
   </div>
   <div class="pbar" id="pb"><div class="pfill" id="pf"></div></div>
+  <div class="view-control">
+    <label for="winSec">WINDOWS</label>
+    <input class="time-window" type="range" id="winSec" min="1" max="10" value="2" step="0.5" aria-label="Visible time window">
+    <output id="winSecV" for="winSec">2.0s</output>
+    <div class="axis-setting"><label for="viewFMin">F0 MIN</label><input type="range" id="viewFMin" min="50" max="180" value="90" step="5"><output id="viewFMinV" for="viewFMin">90Hz</output></div>
+    <div class="axis-setting"><label for="viewFMax">F0 MAX</label><input type="range" id="viewFMax" min="180" max="500" value="400" step="10"><output id="viewFMaxV" for="viewFMax">400Hz</output></div>
+  </div>
 
   <!-- ANALYZE PANEL -->
   <div class="panel active" id="panel-analyze">
@@ -245,7 +261,7 @@ function interpGaps(series){
   if(last>=0&&last<n-1)for(let i=last+1;i<n;i++)interp[i]=interp[last];
   return {interp,wasNull,ok:!interp.some(x=>x==null)};
 }
-function restore(series,vals,wasNull){return series.map((d,i)=>({time:d.time,freq:wasNull[i]?null:vals[i]}));}
+function restore(series,vals,wasNull){return series.map((d,i)=>({...d,freq:wasNull[i]?null:vals[i]}));}
 
 // ── 5. LOESS — UNCHANGED reference: GLOBAL local-regression that interpolates
 //      across gaps. Kept on purpose so you can SEE how much it flattens jumps. ──
@@ -281,24 +297,77 @@ function analyzePitch(ch,sr,done){
   $('pb').style.display='block';
   function chunk(){
     const end=Math.min(fr+120,total);
-    for(;fr<end;fr++){const st=fr*hs,seg=ch.slice(st,st+fs);const e=rms(seg),v=e>0.006;let f=null;if(v){try{f=amdfBest(seg,sr,fMin,fMax);}catch(e){f=null;}}data.push({time:(st+fs/2)/sr,freq:(f&&f>=fMin&&f<=fMax)?f:null});}
+    for(;fr<end;fr++){
+      const st=fr*hs,seg=ch.slice(st,st+fs),e=rms(seg),v=e>0.006;let f=null,z=0,diff=0;
+      for(let i=1;i<seg.length;i++){if((seg[i]>=0)!==(seg[i-1]>=0))z++;const d=seg[i]-seg[i-1];diff+=d*d;}
+      const zcr=z/Math.max(1,seg.length-1),hf=e>1e-8?Math.sqrt(diff/Math.max(1,seg.length-1))/(2*e):0;
+      if(v){try{f=amdfBest(seg,sr,fMin,fMax);}catch(e){f=null;}}
+      data.push({time:(st+fs/2)/sr,freq:(f&&f>=fMin&&f<=fMax)?f:null,energy:e,zcr,hf,unvoiced:false,activity:0});
+    }
     $('pf').style.width=(fr/total*100)+'%';
     if(fr<total){requestAnimationFrame(chunk);return;}
     $('pb').style.display='none';$('pf').style.width='0%';
-    done(finalize(postMedianSnap(data)));
+    done(markVoicelessActivity(finalize(postMedianSnap(data))));
   }
   chunk();
 }
 
+// F0 does not exist in /s/, /f/, /sh/, /th/ and many stop releases. Detect their
+// aperiodic high-frequency energy separately, instead of inventing a pitch value.
+function markVoicelessActivity(series){
+  if(!series.length)return series;
+  const energies=series.map(d=>d.energy||0).sort((a,b)=>a-b);
+  const noise=energies[Math.floor(energies.length*.12)]||0;
+  const strong=energies[Math.floor(energies.length*.95)]||.01;
+  const gate=Math.max(.0012,noise*1.65,noise+(strong-noise)*.018);
+  const out=series.map(d=>({...d}));
+  out.forEach(d=>{
+    const noisy=(d.zcr||0)>.045||(d.hf||0)>.18;
+    d.unvoiced=!d.freq&&(d.energy||0)>gate&&noisy;
+    d.activity=d.unvoiced?Math.max(0,Math.min(1,((d.energy||0)-gate)/Math.max(strong-gate,1e-6))):0;
+  });
+  // Remove one-frame specks and bridge a single missed frame inside frication.
+  for(let i=1;i<out.length-1;i++)if(!out[i].unvoiced&&out[i-1].unvoiced&&out[i+1].unvoiced){out[i].unvoiced=true;out[i].activity=(out[i-1].activity+out[i+1].activity)/2;}
+  let i=0;while(i<out.length){if(!out[i].unvoiced){i++;continue;}let j=i;while(j<out.length&&out[j].unvoiced)j++;if(j-i<2)for(let k=i;k<j;k++){out[k].unvoiced=false;out[k].activity=0;}i=j;}
+  return out;
+}
+
+// End the graph shortly after the final speech event. Up to 600 ms of
+// post-vocalic frication is retained for endings such as /ks/, but later
+// silence, breath and unrelated background noise are excluded from the view.
+function speechGraphEnd(series,audioDuration){
+  let lastVoiced=-1;for(let i=series.length-1;i>=0;i--)if(series[i].freq){lastVoiced=i;break;}
+  if(lastVoiced<0)return audioDuration;
+  const voicedTime=series[lastVoiced].time,maxTail=.60,step=series.length>1?Math.max(.005,series[1].time-series[0].time):.01;let lastSpeech=voicedTime,quiet=0;
+  for(let i=lastVoiced+1;i<series.length;i++){const d=series[i];if(d.time-voicedTime>maxTail)break;if(d.unvoiced){lastSpeech=d.time;quiet=0;}else quiet+=step;if(quiet>.14)break;}
+  const end=lastSpeech>voicedTime?lastSpeech+.07:voicedTime+.10;return Math.max(.2,Math.min(audioDuration,end));
+}
+
 // ════ AUDIO PREP — silence trim + WAV encoding ════
-function trimSilence(ch,sr){const frameSz=Math.round(sr*0.02),pad=Math.round(sr*0.05);const en=[];for(let i=0;i+frameSz<=ch.length;i+=frameSz){let e=0;for(let j=0;j<frameSz;j++)e+=ch[i+j]*ch[i+j];en.push(Math.sqrt(e/frameSz));}if(!en.length)return{ch,offset:0};const sorted=[...en].sort((a,b)=>a-b);const floor=sorted[Math.floor(sorted.length*0.15)]||0,speech=sorted[Math.floor(sorted.length*0.92)]||0.01;const thr=Math.max(floor+(speech-floor)*0.2,speech*0.12,0.01);const NEED=4;let sF=0,eF=en.length-1;for(let k=0;k<en.length;k++){let ok=true;for(let m=0;m<NEED&&k+m<en.length;m++){if(en[k+m]<=thr){ok=false;break;}}if(ok){sF=k;break;}}for(let k=en.length-1;k>=0;k--){let ok=true;for(let m=0;m<NEED&&k-m>=0;m++){if(en[k-m]<=thr){ok=false;break;}}if(ok){eF=k;break;}}const start=Math.max(0,sF*frameSz-pad),end=Math.min(ch.length,(eF+1)*frameSz+pad);if(end<=start)return{ch,offset:0};return{ch:ch.slice(start,end),offset:start/sr};}
+function trimSilence(ch,sr){
+  // Trim only confirmed leading/trailing silence. Weak final consonants must survive.
+  const frameSz=Math.max(256,Math.round(sr*.02)),en=[];
+  for(let i=0;i+frameSz<=ch.length;i+=frameSz){let e=0;for(let j=0;j<frameSz;j++)e+=ch[i+j]*ch[i+j];en.push(Math.sqrt(e/frameSz));}
+  if(!en.length)return{ch,offset:0};
+  const sorted=[...en].sort((a,b)=>a-b),noise=sorted[Math.floor(sorted.length*.10)]||0,high=sorted[Math.floor(sorted.length*.90)]||0;
+  const gate=Math.max(.0045,noise*2.5,noise+(high-noise)*.10);
+  const soft=Math.max(.0018,noise*1.35,noise+(high-noise)*.018);
+  let sF=en.findIndex(e=>e>=gate),eF=-1;
+  for(let k=en.length-1;k>=0;k--)if(en[k]>=gate){eF=k;break;}
+  if(sF<0||eF<sF)return{ch,offset:0}; // an unusually quiet recording is safer untrimmed
+  while(sF>0&&en[sF-1]>=soft)sF--;
+  while(eF<en.length-1&&en[eF+1]>=soft)eF++;
+  const lead=Math.round(sr*.16),tail=Math.round(sr*.42);
+  const start=Math.max(0,sF*frameSz-lead),end=Math.min(ch.length,(eF+1)*frameSz+tail);
+  return{ch:ch.slice(start,end),offset:start/sr};
+}
 function makeWavBlob(cd,sr){const len=cd.length,b=new ArrayBuffer(44+len*2),v=new DataView(b);let p=0;const ws=s=>{for(let i=0;i<s.length;i++)v.setUint8(p++,s.charCodeAt(i));};const w32=x=>{v.setUint32(p,x,true);p+=4;};const w16=x=>{v.setUint16(p,x,true);p+=2;};ws('RIFF');w32(36+len*2);ws('WAVE');ws('fmt ');w32(16);w16(1);w16(1);w32(sr);w32(sr*2);w16(2);w16(16);ws('data');w32(len*2);for(let i=0;i<len;i++){let s=Math.max(-1,Math.min(1,cd[i]));v.setInt16(p,s<0?s*0x8000:s*0x7FFF,true);p+=2;}return new Blob([b],{type:'audio/wav'});}
 
 // ════ STATE ════
 const S={tab:'analyze',
-  anWave:null,anDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,anFull:null,
-  refWave:null,refDur:0,refRaw:null,refSmooth:[],refAudio:null,refSr:0,
-  recWave:null,recDur:0,recRaw:null,recSmooth:[],recAudio:null,recSr:0,
+  anWave:null,anDur:0,anGraphDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,anFull:null,
+  refWave:null,refDur:0,refGraphDur:0,refRaw:null,refSmooth:[],refAudio:null,refSr:0,
+  recWave:null,recDur:0,recGraphDur:0,recRaw:null,recSmooth:[],recAudio:null,recSr:0,
   raf:null,isRec:false,mr:null,chunks:[],micStream:null,micCtx:null,micAnalyser:null,micGain:null,micBuf:null,micSr:0,
   live:false,liveData:[],liveT0:0,liveRaf:null,
   selA:null,selB:null,selDrag:null};
@@ -308,7 +377,7 @@ const PAD={l:44,t:16,r:12,b:22};
 function fY(hz,lo,hi,gH){return PAD.t+(1-(Math.log2(Math.max(hz,lo))-Math.log2(lo))/(Math.log2(hi)-Math.log2(lo)))*gH;}
 function drawGraph(canvasId,datasets,fullDur,curTime){
   const cv=$(canvasId);if(!cv)return;const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
-  const lo=parseInt($('fMin').value),hi=parseInt($('fMax').value);
+  const lo=parseInt($('viewFMin').value),hi=Math.max(lo+20,parseInt($('viewFMax').value));
   const gW=W-PAD.l-PAD.r,gH=H-PAD.t-PAD.b;const winSec=parseFloat($('winSec').value);
   let tStart,tEnd;const useWindow=fullDur>winSec;
   if(useWindow){const cur=curTime||0;tStart=cur-winSec*0.5;if(tStart<0)tStart=0;tEnd=tStart+winSec;if(tEnd>fullDur){tEnd=fullDur;tStart=Math.max(0,tEnd-winSec);}}else{tStart=0;tEnd=fullDur;}
@@ -316,7 +385,7 @@ function drawGraph(canvasId,datasets,fullDur,curTime){
   ctx.fillStyle='#0a0d12';ctx.fillRect(0,0,W,H);
   // Hz grid
   ctx.font='9px "Space Mono",ui-monospace,monospace';ctx.textAlign='right';
-  for(let hz=Math.ceil(lo/50)*50;hz<=hi;hz+=50){const y=fY(hz,lo,hi,gH);if(y<PAD.t-2||y>H-PAD.b+2)continue;const main=hz%100===0;ctx.strokeStyle=main?'#223040':'#151f2a';ctx.lineWidth=main?.8:.4;ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(W-PAD.r,y);ctx.stroke();ctx.fillStyle='#3a5060';ctx.fillText(hz,PAD.l-4,y+3);}
+  const hzStep=hi-lo<=170?25:50;for(let hz=Math.ceil(lo/hzStep)*hzStep;hz<=hi;hz+=hzStep){const y=fY(hz,lo,hi,gH);if(y<PAD.t-2||y>H-PAD.b+2)continue;const main=hz%100===0;ctx.strokeStyle=main?'#223040':'#151f2a';ctx.lineWidth=main?.8:.4;ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(W-PAD.r,y);ctx.stroke();ctx.fillStyle='#3a5060';ctx.fillText(hz,PAD.l-4,y+3);}
   // time grid
   const ts=spanDur>4?1:spanDur>2?0.5:0.25;ctx.textAlign='center';ctx.font='8px "Space Mono",ui-monospace,monospace';
   for(let t=Math.ceil(tStart/ts)*ts;t<=tEnd+.001;t+=ts){const x=xT(t);ctx.strokeStyle='#141e28';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,H-PAD.b);ctx.stroke();ctx.fillStyle='#2e4050';ctx.fillText(t.toFixed(1)+'s',x,H-5);}
@@ -359,14 +428,14 @@ function drawActive(){
   if(S.tab==='analyze'){
     if(!S.anSmooth.length)return;
     const cur=S.anAudio?S.anAudio.currentTime:0;
-    SMOOTHERS.forEach((sm,i)=>drawGraph('an-cv-'+i,[{data:S.anSmooth[i],color:sm.color}],S.anDur||1,cur));
+    SMOOTHERS.forEach((sm,i)=>drawGraph('an-cv-'+i,[{data:S.anSmooth[i],color:sm.color}],S.anGraphDur||S.anDur||1,cur));
     drawSelectionLayer();
   }else{
     if(!S.refSmooth.length&&!S.recSmooth.length)return;
     // follow whichever audio is actually playing (max-of-both parked one audio and broke the dot)
     const playing=[S.refAudio,S.recAudio].find(x=>x&&!x.paused);
     const cur=playing?playing.currentTime:Math.max(S.refAudio?S.refAudio.currentTime:0,S.recAudio?S.recAudio.currentTime:0);
-    const dur=Math.max(S.refDur,S.recDur,0.1);
+    const dur=Math.max(S.refGraphDur||S.refDur,S.recGraphDur||S.recDur,0.1);
     SMOOTHERS.forEach((sm,i)=>drawGraph('cmp-cv-'+i,[{data:(S.refSmooth[i]||[]),color:'#ff6b6b'},{data:(S.recSmooth[i]||[]),color:'#00e5ff'}],dur,cur));
   }
 }
@@ -376,11 +445,11 @@ function drawActive(){
 function windowFor(fullDur,cur){const winSec=parseFloat($('winSec').value);let tStart=0,tEnd=fullDur;if(fullDur>winSec){const c=cur||0;tStart=c-winSec*0.5;if(tStart<0)tStart=0;tEnd=tStart+winSec;if(tEnd>fullDur){tEnd=fullDur;tStart=Math.max(0,tEnd-winSec);}}return{tStart,tEnd};}
 function drawOverview(){
   if(S.tab==='analyze'){
-    drawOneOverview('an-ov-0',S.anWave,S.anSr,S.anDur,S.anAudio?S.anAudio.currentTime:0,'#00e5ff');
+    drawOneOverview('an-ov-0',S.anWave,S.anSr,S.anGraphDur||S.anDur,S.anAudio?S.anAudio.currentTime:0,'#00e5ff');
   }else{
     const playing=[S.refAudio,S.recAudio].find(x=>x&&!x.paused);
     const cur=playing?playing.currentTime:Math.max(S.refAudio?S.refAudio.currentTime:0,S.recAudio?S.recAudio.currentTime:0);
-    const dur=Math.max(S.refDur,S.recDur,0.1);
+    const dur=Math.max(S.refGraphDur||S.refDur,S.recGraphDur||S.recDur,0.1);
     const wave=S.recWave||S.refWave,sr=S.recWave?S.recSr:S.refSr,col=S.recWave?'#00e5ff':'#ff6b6b';
     drawOneOverview('cmp-ov-0',wave,sr,dur,cur,col);
   }
@@ -402,7 +471,7 @@ function drawOneOverview(canvasId,wave,sr,fullDur,cur,color){
 }
 
 // ════ SELECTION (Analyze only) — drag on the graph to isolate a part ════
-function winMap(){return windowFor(S.anDur||1,S.anAudio?S.anAudio.currentTime:0);}
+function winMap(){return windowFor(S.anGraphDur||S.anDur||1,S.anAudio?S.anAudio.currentTime:0);}
 function timeFromX(x,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();const frac=Math.max(0,Math.min(1,(x-lo)/gW));return tStart+frac*(tEnd-tStart);}
 function xFromTime(t,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();return lo+((t-tStart)/(tEnd-tStart))*gW;}
 function drawSelectionLayer(){
@@ -434,7 +503,7 @@ window.isolateSelection=function(){
   analyzeSegment(part,sr,'an');
   const idea=document.querySelector('#anStack .cidea');if(idea){idea.innerHTML='isolated part · <a href="#" id="an-backfull" style="color:var(--cyan)">show full audio</a>';const bf=$('an-backfull');if(bf)bf.addEventListener('click',ev=>{ev.preventDefault();backToFull();});}
 };
-function backToFull(){if(!S.anFull)return;analyzeSegment(S.anFull.ch,S.anFull.sr,'an');const idea=document.querySelector('#anStack .cidea');if(idea)idea.textContent='F0 · Hz · drag on the graph to isolate a part';}
+function backToFull(){if(!S.anFull)return;analyzeSegment(S.anFull.ch,S.anFull.sr,'an');const idea=document.querySelector('#anStack .cidea');if(idea)idea.textContent='';}
 // Send the current selection to Compare as the reference, then switch tabs so you can record your voice against it.
 window.selectionToReference=function(){
   if(S.selA==null||S.selB==null||!S.anFull)return;
@@ -523,12 +592,13 @@ function processBuffer(ab,target){
   analyzeSegment(ch,sr,target);
 }
 function analyzeSegment(ch,sr,target){
-  S[target+'Wave']=ch;S[target+'Dur']=ch.length/sr;S[target+'Sr']=sr;
+  S[target+'Wave']=ch;S[target+'Dur']=ch.length/sr;S[target+'GraphDur']=ch.length/sr;S[target+'Sr']=sr;
   setupAudio(target,makeWavBlob(ch,sr),ch.length/sr);
   const pb=$(target+'PlayBtn');if(pb)pb.disabled=false;
   analyzePitch(ch,sr,pitch=>{
     S[target+'Raw']=pitch;
     S[target+'Smooth']=SMOOTHERS.map(sm=>sm.fn(pitch));
+    S[target+'GraphDur']=speechGraphEnd(S[target+'Smooth'][0],S[target+'Dur']);
     // hide the "record or load" placeholders, but ONLY in the panel this audio belongs to
     const panel={an:'panel-analyze',ref:'panel-compare',rec:'panel-compare'}[target];
     document.querySelectorAll('#'+panel+' .empty').forEach(e=>e.style.display='none');
@@ -540,7 +610,14 @@ function analyzeSegment(ch,sr,target){
 // Keep the mic stream open after the first grant so the browser doesn't re-prompt each time.
 async function getMic(){
   if(S.micStream&&S.micStream.active&&S.micAnalyser)return S.micStream;
-  S.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  // Speech-cleanup algorithms can mistake /s/, /f/, /sh/ and stop releases for
+  // background noise. Ask for the least processed microphone signal available.
+  S.micStream=await navigator.mediaDevices.getUserMedia({audio:{
+    echoCancellation:false,
+    noiseSuppression:false,
+    autoGainControl:false,
+    channelCount:1
+  }});
   const ac=new(window.AudioContext||window.webkitAudioContext)();
   if(ac.state==='suspended'){try{await ac.resume();}catch(_){}}
   const src=ac.createMediaStreamSource(S.micStream);
@@ -572,7 +649,7 @@ function buildAnalyzeStack(){
   const stack=$('anStack');if(!stack)return;stack.innerHTML='';
   SMOOTHERS.forEach((sm,i)=>{
     const card=document.createElement('div');card.className='card';card.id='an-card-'+i;
-    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Pitch contour</div><div class="cidea"><b>Higher voice ↑</b> · lower voice ↓ · drag to isolate a part</div></div></div><div class="cv-area"><canvas id="an-cv-${i}"></canvas><canvas id="an-sel-${i}" class="sel-layer"></canvas><div class="empty" id="an-em-${i}">Record your voice or load an audio file</div></div><div class="seltools" id="an-seltools"><span class="selinfo" id="an-selinfo">—</span><button class="primary" id="an-isolate">Isolate &amp; analyse</button><button id="an-toref">Compare with my voice</button><button id="an-clearsel">Clear</button></div><div class="ov-area"><canvas id="an-ov-${i}"></canvas></div><div class="stats" id="an-st-${i}"><span>—</span></div>`;
+    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Pitch contour</div><div class="cidea"></div></div></div><div class="cv-area"><canvas id="an-cv-${i}"></canvas><canvas id="an-sel-${i}" class="sel-layer"></canvas><div class="empty" id="an-em-${i}">Record your voice or load an audio file</div></div><div class="seltools" id="an-seltools"><span class="selinfo" id="an-selinfo">—</span><button class="primary" id="an-isolate">Isolate &amp; analyse</button><button id="an-toref">Compare with my voice</button><button id="an-clearsel">Clear</button></div><div class="ov-area"><canvas id="an-ov-${i}"></canvas></div><div class="stats" id="an-st-${i}"><span>—</span></div>`;
     stack.appendChild(card);
   });
 }
@@ -617,8 +694,8 @@ function wireFileInput(id,target){
 wireFileInput('anFile','an');wireFileInput('refFile','ref');
 $('anRecBtn').addEventListener('click',()=>S.isRec?stopRec('an'):startRec('an'));
 $('recRecBtn').addEventListener('click',()=>S.isRec?stopRec('rec'):startRec('rec'));
-$('fMin').addEventListener('input',function(){$('fMinV').textContent=this.value+'Hz';redraw();});
-$('fMax').addEventListener('input',function(){$('fMaxV').textContent=this.value+'Hz';redraw();});
+$('viewFMin').addEventListener('input',function(){if(parseInt(this.value)>=parseInt($('viewFMax').value)){$('viewFMax').value=Math.min(500,parseInt(this.value)+20);$('viewFMaxV').textContent=$('viewFMax').value+'Hz';}$('viewFMinV').textContent=this.value+'Hz';redraw();});
+$('viewFMax').addEventListener('input',function(){if(parseInt(this.value)<=parseInt($('viewFMin').value)){$('viewFMin').value=Math.max(50,parseInt(this.value)-20);$('viewFMinV').textContent=$('viewFMin').value+'Hz';}$('viewFMaxV').textContent=this.value+'Hz';redraw();});
 $('winSec').addEventListener('input',function(){$('winSecV').textContent=parseFloat(this.value).toFixed(1)+'s';redraw();});
 window.addEventListener('resize',()=>setTimeout(()=>{drawActive();drawOverview();},60));
 
