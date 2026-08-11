@@ -66,16 +66,8 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 .cidea{font-size:.66rem;color:var(--cyan);font-weight:600;}.cidea:empty{display:none}
 .cv-area{position:relative;height:406px;}
 .cv-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-.cv-area canvas.sel-layer{cursor:crosshair;z-index:3;}
 .ov-area{position:relative;height:54px;border-top:1px solid var(--border);background:#0b0e14;}
 .ov-area canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;}
-.seltools{display:none;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border);background:var(--panel2);font-family:var(--mono);font-size:.66rem;color:var(--text2);}
-.seltools.show{display:flex;}
-.seltools .selinfo{color:var(--cyan);}
-.seltools button{font-family:var(--mono);font-size:.62rem;font-weight:700;padding:5px 12px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;}
-.seltools button:hover{border-color:var(--cyan);color:var(--cyan);}
-.seltools button.primary{background:var(--cyan);color:#000;border-color:var(--cyan);}
-.seltools button.primary:hover{background:#5af0ff;}
 .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.78rem;z-index:2;text-align:center;padding:0 20px;}
 .stats{padding:6px 14px;border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:.58rem;color:var(--text3);}
 .stats b{color:var(--cyan);font-weight:700;}
@@ -104,12 +96,13 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 @media(max-width:720px){main{padding:12px}.player{align-items:stretch;flex-wrap:wrap}.ptrack{flex-basis:100%}.btn-rec{width:100%;justify-content:center}}
 
 .view-control{display:flex;align-items:center;gap:11px;margin:0 auto 14px;padding:10px 13px;max-width:1105px;border:1px solid var(--border);border-radius:11px;background:var(--panel);color:var(--text2);font:600 10px var(--mono)}.view-control label{color:var(--text3);letter-spacing:.5px;white-space:nowrap}.view-control input{accent-color:var(--cyan)}.view-control>.time-window{flex:1;min-width:120px}.view-control output{min-width:45px;text-align:right;color:var(--cyan);font-weight:700}.axis-setting{display:flex;align-items:center;gap:7px;padding-left:11px;border-left:1px solid #243448}.axis-setting input{width:86px;min-width:70px}.axis-setting output{min-width:42px}
+.graph-settings{max-width:1105px;margin:0 auto 14px}.graph-settings summary{min-height:38px;padding:8px 13px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--text2);font:700 10px var(--mono);letter-spacing:.7px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none}.graph-settings summary::-webkit-details-marker{display:none}.graph-settings summary::after{content:'+';color:var(--cyan);font-size:16px;line-height:1}.graph-settings[open] summary{border-color:var(--border2);border-radius:10px 10px 6px 6px}.graph-settings[open] summary::after{content:'−'}.graph-settings .view-control{margin:8px 0 0}
 @media(max-width:720px){.view-control{flex-wrap:wrap}.view-control>label{flex-basis:100%}.axis-setting{flex:1;padding-left:0;border-left:0}.axis-setting input{flex:1}}
 @media(max-width:720px){
   header{padding:10px 12px;gap:8px}.logo-block img{height:50px!important}.logo-tag{letter-spacing:1px}.tabs{margin-left:auto}.tab{min-height:44px;padding:9px 13px}
   main{padding:12px 10px 42px}.cv-area{height:clamp(340px,52svh,406px)}
   .player{padding:11px;gap:9px}.player .plabel{flex-basis:100%;min-width:0}.btn,.upload,.live-btn{min-height:44px;justify-content:center;touch-action:manipulation}.btn-rec{flex:1 0 100%}.btn-play,.upload,.live-btn{flex:1 1 88px}.ptrack{flex:1 1 calc(100% - 90px);min-height:12px}.ptime{flex:0 0 80px}
-  .view-control{padding:11px;gap:8px}.view-control input[type="range"]{min-height:32px}.view-control>.time-window{min-width:0}.seltools.show{flex-wrap:wrap}.seltools .selinfo{flex-basis:100%}.seltools button{min-height:42px;flex:1 1 120px}.ov-area{height:62px}
+  .graph-settings summary{min-height:44px}.view-control{padding:11px;gap:8px}.view-control input[type="range"]{min-height:32px}.view-control>.time-window{min-width:0}.ov-area{height:62px}
 }
 @media(max-width:520px){
   .axis-setting{flex:1 1 100%;width:100%}.axis-setting label{flex:0 0 50px}.axis-setting input{min-width:0}.axis-setting output{flex:0 0 48px}.chead{padding:11px 13px}.stats{gap:9px;padding:7px 11px}.empty{padding:0 14px}
@@ -136,19 +129,21 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
     <input type="hidden" id="fMax" value="500">
   </div>
   <div class="pbar" id="pb"><div class="pfill" id="pf"></div></div>
-  <div class="view-control">
-    <label for="winSec">WINDOWS</label>
-    <input class="time-window" type="range" id="winSec" min="1" max="10" value="2" step="0.5" aria-label="Visible time window">
-    <output id="winSecV" for="winSec">2.0s</output>
-    <div class="axis-setting"><label for="viewFMin">F0 MIN</label><input type="range" id="viewFMin" min="50" max="180" value="90" step="5"><output id="viewFMinV" for="viewFMin">90Hz</output></div>
-    <div class="axis-setting"><label for="viewFMax">F0 MAX</label><input type="range" id="viewFMax" min="180" max="500" value="400" step="10"><output id="viewFMaxV" for="viewFMax">400Hz</output></div>
-  </div>
+  <details class="graph-settings">
+    <summary>GRAPH CONTROLS</summary>
+    <div class="view-control">
+      <label for="winSec">WINDOWS</label>
+      <input class="time-window" type="range" id="winSec" min="1" max="10" value="2" step="0.5" aria-label="Visible time window">
+      <output id="winSecV" for="winSec">2.0s</output>
+      <div class="axis-setting"><label for="viewFMin">F0 MIN</label><input type="range" id="viewFMin" min="50" max="180" value="90" step="5"><output id="viewFMinV" for="viewFMin">90Hz</output></div>
+      <div class="axis-setting"><label for="viewFMax">F0 MAX</label><input type="range" id="viewFMax" min="180" max="500" value="400" step="10"><output id="viewFMaxV" for="viewFMax">400Hz</output></div>
+    </div>
+  </details>
 
   <!-- ANALYZE PANEL -->
   <div class="panel active" id="panel-analyze">
     <div class="player show" id="anPlayer">
       <span class="plabel">PRACTICE AUDIO</span>
-      <button class="btn btn-rec" id="anRecBtn" title="Record" aria-label="Record audio"><span id="anRecTxt">Record</span></button>
       <button class="btn btn-play" id="anPlayBtn" onclick="togglePlay('an')" disabled title="Play" aria-label="Play audio"><svg id="anPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="anPlayTxt">Play</span></button>
       <label class="upload" style="margin:0"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Load<input type="file" id="anFile" accept="audio/*"></label>
       <button class="live-btn" id="liveBtn" title="See your pitch live while you speak">● Live practice</button>
@@ -365,12 +360,11 @@ function makeWavBlob(cd,sr){const len=cd.length,b=new ArrayBuffer(44+len*2),v=ne
 
 // ════ STATE ════
 const S={tab:'analyze',
-  anWave:null,anDur:0,anGraphDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,anFull:null,
+  anWave:null,anDur:0,anGraphDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,
   refWave:null,refDur:0,refGraphDur:0,refRaw:null,refSmooth:[],refAudio:null,refSr:0,
   recWave:null,recDur:0,recGraphDur:0,recRaw:null,recSmooth:[],recAudio:null,recSr:0,
   raf:null,isRec:false,mr:null,chunks:[],micStream:null,micCtx:null,micAnalyser:null,micGain:null,micBuf:null,micSr:0,
-  live:false,liveData:[],liveT0:0,liveRaf:null,
-  selA:null,selB:null,selDrag:null};
+  live:false,liveData:[],liveT0:0,liveRaf:null};
 
 // ════ DRAWING — sliding 2s window, plain clean line (smoothing does the work) ════
 const PAD={l:44,t:16,r:12,b:22};
@@ -429,7 +423,6 @@ function drawActive(){
     if(!S.anSmooth.length)return;
     const cur=S.anAudio?S.anAudio.currentTime:0;
     SMOOTHERS.forEach((sm,i)=>drawGraph('an-cv-'+i,[{data:S.anSmooth[i],color:sm.color}],S.anGraphDur||S.anDur||1,cur));
-    drawSelectionLayer();
   }else{
     if(!S.refSmooth.length&&!S.recSmooth.length)return;
     // follow whichever audio is actually playing (max-of-both parked one audio and broke the dot)
@@ -470,49 +463,6 @@ function drawOneOverview(canvasId,wave,sr,fullDur,cur,color){
   if(cur>=tStart&&cur<=tEnd){const px=xT(cur);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px,3,3,0,Math.PI*2);ctx.fill();}
 }
 
-// ════ SELECTION (Analyze only) — drag on the graph to isolate a part ════
-function winMap(){return windowFor(S.anGraphDur||S.anDur||1,S.anAudio?S.anAudio.currentTime:0);}
-function timeFromX(x,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();const frac=Math.max(0,Math.min(1,(x-lo)/gW));return tStart+frac*(tEnd-tStart);}
-function xFromTime(t,cv){const W=cv.offsetWidth,lo=PAD.l,hi=W-PAD.r,gW=hi-lo;const{tStart,tEnd}=winMap();return lo+((t-tStart)/(tEnd-tStart))*gW;}
-function drawSelectionLayer(){
-  const cv=$('an-sel-0');if(!cv)return;const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  if(S.selA==null||S.selB==null)return;
-  let x1=xFromTime(S.selA,cv),x2=xFromTime(S.selB,cv);if(x2<x1){const t=x1;x1=x2;x2=t;}
-  ctx.fillStyle='rgba(0,229,255,.16)';ctx.fillRect(x1,0,x2-x1,H);
-  ctx.strokeStyle='#00e5ff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,0);ctx.lineTo(x1,H);ctx.moveTo(x2,0);ctx.lineTo(x2,H);ctx.stroke();
-}
-function setupSelection(){
-  const cv=$('an-sel-0');if(!cv)return;
-  const getX=e=>{const r=cv.getBoundingClientRect();return(e.touches?e.touches[0].clientX:e.clientX)-r.left;};
-  function down(e){if(!S.anWave)return;e.preventDefault();const x=getX(e);S.selDrag=true;S.selA=timeFromX(x,cv);S.selB=S.selA;drawSelectionLayer();}
-  function move(e){if(!S.selDrag)return;const x=getX(e);S.selB=timeFromX(x,cv);drawSelectionLayer();updateSelInfo();}
-  function up(){if(!S.selDrag)return;S.selDrag=false;
-    if(S.selA!=null&&S.selB!=null&&Math.abs(S.selB-S.selA)<0.05){S.selA=S.selB=null;drawSelectionLayer();$('an-seltools').classList.remove('show');return;}
-    if(S.selA!=null&&S.selB!=null){if(S.selB<S.selA){const t=S.selA;S.selA=S.selB;S.selB=t;}$('an-seltools').classList.add('show');updateSelInfo();}
-  }
-  cv.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
-  cv.addEventListener('touchstart',down,{passive:false});cv.addEventListener('touchmove',move,{passive:false});cv.addEventListener('touchend',up);
-}
-function updateSelInfo(){const el=$('an-selinfo');if(!el||S.selA==null)return;const a=Math.min(S.selA,S.selB),b=Math.max(S.selA,S.selB);el.textContent=`selection  ${a.toFixed(2)}s – ${b.toFixed(2)}s  (${(b-a).toFixed(2)}s)`;}
-window.isolateSelection=function(){
-  if(S.selA==null||S.selB==null||!S.anFull)return;
-  const {ch,sr}=S.anFull;const a=Math.max(0,Math.min(S.selA,S.selB)),b=Math.min(ch.length/sr,Math.max(S.selA,S.selB));
-  const i0=Math.floor(a*sr),i1=Math.floor(b*sr);if(i1-i0<sr*0.05)return;
-  const part=ch.slice(i0,i1);S.selA=S.selB=null;$('an-seltools').classList.remove('show');
-  analyzeSegment(part,sr,'an');
-  const idea=document.querySelector('#anStack .cidea');if(idea){idea.innerHTML='isolated part · <a href="#" id="an-backfull" style="color:var(--cyan)">show full audio</a>';const bf=$('an-backfull');if(bf)bf.addEventListener('click',ev=>{ev.preventDefault();backToFull();});}
-};
-function backToFull(){if(!S.anFull)return;analyzeSegment(S.anFull.ch,S.anFull.sr,'an');const idea=document.querySelector('#anStack .cidea');if(idea)idea.textContent='';}
-// Send the current selection to Compare as the reference, then switch tabs so you can record your voice against it.
-window.selectionToReference=function(){
-  if(S.selA==null||S.selB==null||!S.anFull)return;
-  const {ch,sr}=S.anFull;const a=Math.max(0,Math.min(S.selA,S.selB)),b=Math.min(ch.length/sr,Math.max(S.selA,S.selB));
-  const i0=Math.floor(a*sr),i1=Math.floor(b*sr);if(i1-i0<sr*0.05)return;
-  const part=ch.slice(i0,i1);S.selA=S.selB=null;$('an-seltools').classList.remove('show');drawSelectionLayer();
-  analyzeSegment(part,sr,'ref');
-  switchTab('compare');
-};
 // ════ LIVE PRACTICE (Practice tab) — a real-time pitch mirror: speak and watch
 //   your contour scroll, without the record→analyse→repeat cycle. ════
 async function toggleLive(){
@@ -588,7 +538,6 @@ function stopFollow(){if(S.raf){cancelAnimationFrame(S.raf);S.raf=null;}}
 // ════ PROCESS an audio buffer into a target (an / ref / rec) ════
 function processBuffer(ab,target){
   const sr=ab.sampleRate;const {ch}=trimSilence(ab.getChannelData(0),sr);
-  if(target==='an'){S.anFull={ch,sr};S.selA=S.selB=null;}
   analyzeSegment(ch,sr,target);
 }
 function analyzeSegment(ch,sr,target){
@@ -610,14 +559,10 @@ function analyzeSegment(ch,sr,target){
 // Keep the mic stream open after the first grant so the browser doesn't re-prompt each time.
 async function getMic(){
   if(S.micStream&&S.micStream.active&&S.micAnalyser)return S.micStream;
-  // Speech-cleanup algorithms can mistake /s/, /f/, /sh/ and stop releases for
-  // background noise. Ask for the least processed microphone signal available.
-  S.micStream=await navigator.mediaDevices.getUserMedia({audio:{
-    echoCancellation:false,
-    noiseSuppression:false,
-    autoGainControl:false,
-    channelCount:1
-  }});
+  // Let the browser/device use its own default mic processing (AGC, echo
+  // cancellation, noise suppression). Forcing these off used to sound bad on
+  // some devices whose hardware relies on them to avoid clipping/low volume.
+  S.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
   const ac=new(window.AudioContext||window.webkitAudioContext)();
   if(ac.state==='suspended'){try{await ac.resume();}catch(_){}}
   const src=ac.createMediaStreamSource(S.micStream);
@@ -628,17 +573,25 @@ async function getMic(){
   S.micCtx=ac;S.micAnalyser=an;S.micGain=g;S.micSr=ac.sampleRate;S.micBuf=new Float32Array(an.fftSize);
   return S.micStream;
 }
+function recorderOptions(){
+  const candidates=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4;codecs=mp4a.40.2','audio/mp4'];
+  let mimeType='';
+  if(typeof MediaRecorder!=='undefined'&&typeof MediaRecorder.isTypeSupported==='function'){
+    mimeType=candidates.find(type=>{try{return MediaRecorder.isTypeSupported(type);}catch(_){return false;}})||'';
+  }
+  const options={audioBitsPerSecond:160000};if(mimeType)options.mimeType=mimeType;return options;
+}
 async function startRec(target){
   try{
     const stream=await getMic();
-    S.chunks=[];const mr=new MediaRecorder(stream);S.mr=mr;S.isRec=true;
+    S.chunks=[];let mr;try{mr=new MediaRecorder(stream,recorderOptions());}catch(_){mr=new MediaRecorder(stream);}S.mr=mr;S.isRec=true;
     mr.ondataavailable=ev=>{if(ev.data.size>0)S.chunks.push(ev.data);};
-    mr.onstop=async()=>{const blob=new Blob(S.chunks,{type:'audio/webm'});const buf=await blob.arrayBuffer();const ab=await getDecodeCtx().decodeAudioData(buf);processBuffer(ab,target);};
-    mr.start(100);
+    mr.onstop=async()=>{try{const chunkType=S.chunks.find(chunk=>chunk.type)?.type||'';const type=mr.mimeType||chunkType;const blob=new Blob(S.chunks,type?{type}:undefined);const buf=await blob.arrayBuffer();const ab=await getDecodeCtx().decodeAudioData(buf);processBuffer(ab,target);}catch(_){alert('This recording could not be decoded on this device.');}};
+    mr.start();
     const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');
     if(recBtn)recBtn.classList.add('live');
     if(recTxt)recTxt.textContent='Stop';
-  }catch{alert('No microphone access');}
+  }catch{alert('Recording is unavailable or microphone access was denied.');}
 }
 function stopRec(target){
   if(S.mr&&S.isRec){S.isRec=false;S.mr.stop();const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');if(recBtn)recBtn.classList.remove('live');if(recTxt)recTxt.textContent='Record';}
@@ -649,7 +602,7 @@ function buildAnalyzeStack(){
   const stack=$('anStack');if(!stack)return;stack.innerHTML='';
   SMOOTHERS.forEach((sm,i)=>{
     const card=document.createElement('div');card.className='card';card.id='an-card-'+i;
-    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Pitch contour</div><div class="cidea"></div></div></div><div class="cv-area"><canvas id="an-cv-${i}"></canvas><canvas id="an-sel-${i}" class="sel-layer"></canvas><div class="empty" id="an-em-${i}">Record your voice or load an audio file</div></div><div class="seltools" id="an-seltools"><span class="selinfo" id="an-selinfo">—</span><button class="primary" id="an-isolate">Isolate &amp; analyse</button><button id="an-toref">Compare with my voice</button><button id="an-clearsel">Clear</button></div><div class="ov-area"><canvas id="an-ov-${i}"></canvas></div><div class="stats" id="an-st-${i}"><span>—</span></div>`;
+    card.innerHTML=`<div class="chead"><div class="chead-main"><div class="cname">Pitch contour</div></div></div><div class="cv-area"><canvas id="an-cv-${i}"></canvas><div class="empty" id="an-em-${i}">Load an audio file or use Live practice</div></div><div class="ov-area"><canvas id="an-ov-${i}"></canvas></div><div class="stats" id="an-st-${i}"><span>—</span></div>`;
     stack.appendChild(card);
   });
 }
@@ -692,7 +645,6 @@ function wireFileInput(id,target){
   });
 }
 wireFileInput('anFile','an');wireFileInput('refFile','ref');
-$('anRecBtn').addEventListener('click',()=>S.isRec?stopRec('an'):startRec('an'));
 $('recRecBtn').addEventListener('click',()=>S.isRec?stopRec('rec'):startRec('rec'));
 $('viewFMin').addEventListener('input',function(){if(parseInt(this.value)>=parseInt($('viewFMax').value)){$('viewFMax').value=Math.min(500,parseInt(this.value)+20);$('viewFMaxV').textContent=$('viewFMax').value+'Hz';}$('viewFMinV').textContent=this.value+'Hz';redraw();});
 $('viewFMax').addEventListener('input',function(){if(parseInt(this.value)<=parseInt($('viewFMin').value)){$('viewFMin').value=Math.max(50,parseInt(this.value)-20);$('viewFMinV').textContent=$('viewFMin').value+'Hz';}$('viewFMaxV').textContent=this.value+'Hz';redraw();});
@@ -703,18 +655,15 @@ window.addEventListener('resize',()=>setTimeout(()=>{drawActive();drawOverview()
 (function checkSupport(){
   const hasAudioCtx=!!(window.AudioContext||window.webkitAudioContext);
   const hasMic=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  const hasRecorder=typeof MediaRecorder!=='undefined';
   if(!hasAudioCtx){
     document.querySelectorAll('.empty').forEach(e=>{e.textContent='Your browser does not support the Web Audio API. Try an up-to-date Chrome, Edge or Firefox.';});
-  } else if(!hasMic){
+  } else if(!hasMic||!hasRecorder){
     [...document.querySelectorAll('.btn-rec')].forEach(b=>{b.disabled=true;b.title='Recording is unavailable in this browser — you can load a file instead';});
   }
 })();
 buildAnalyzeStack();
 buildCompareStack();
-setupSelection();
-$('an-isolate').addEventListener('click',isolateSelection);
-$('an-toref').addEventListener('click',selectionToReference);
-$('an-clearsel').addEventListener('click',()=>{S.selA=S.selB=null;drawSelectionLayer();$('an-seltools').classList.remove('show');});
 $('liveBtn').addEventListener('click',toggleLive);
 ['an-ov-0','cmp-ov-0'].forEach(id=>{const ov=$(id);if(ov)ov.addEventListener('click',e=>{const t=S.tab==='analyze'?'an':(S.recWave?'rec':'ref');const au=S[t+'Audio'],dur=S[t+'Dur'];if(!au||!dur)return;const r=ov.getBoundingClientRect();au.currentTime=Math.max(0,Math.min(dur,((e.clientX-r.left)/r.width)*dur));drawActive();drawOverview();});});
 
