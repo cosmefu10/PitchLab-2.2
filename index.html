@@ -75,7 +75,8 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
 /* COMPARE legend + score */
 .cmp-legend{display:flex;gap:18px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:11px 16px;margin-bottom:14px;flex-wrap:wrap;}
 .live-btn{font-family:var(--mono);font-size:.66rem;font-weight:700;padding:7px 14px;border:1px solid var(--border2);border-radius:5px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;}
-.live-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.live-btn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+.live-btn:disabled{opacity:.4;cursor:not-allowed;}
 .live-btn.on{background:var(--red);color:#fff;border-color:var(--red);animation:pulse 1.1s infinite;}
 .leg-item{display:flex;align-items:center;gap:7px;font-size:.74rem;font-family:var(--mono);color:var(--text2);}
 .leg-dot{width:12px;height:3px;border-radius:2px;}
@@ -165,6 +166,7 @@ main{padding:18px 22px 50px;max-width:1150px;margin:0 auto;}
     <div class="player show" id="recPlayer">
       <span class="plabel" style="color:var(--cyan)">YOUR VOICE</span>
       <button class="btn btn-rec" id="recRecBtn" title="Record your voice" aria-label="Record your voice"><span id="recRecTxt">Record</span></button>
+      <input type="file" id="recCaptureFile" accept="audio/*" capture="user" hidden aria-hidden="true">
       <button class="btn btn-play" id="recPlayBtn" onclick="togglePlay('rec')" disabled title="Play your voice" aria-label="Play your voice"><svg id="recPlayIco" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="recPlayTxt">Play</span></button>
       <div class="ptrack" onclick="seek('rec',event)"><div class="pfillbar" id="recFill" style="background:var(--cyan)"></div></div>
       <span class="ptime" id="recTime">0:00 / 0:00</span>
@@ -211,8 +213,39 @@ function amdfBest(buf,sr,fMin,fMax){
   if(bestV>mean*0.75)return null;
   return sr/parabolicMin(amdf,best);
 }
+
+// Estimate the real interval between pitch samples. Loaded/recorded audio uses
+// a fixed 10 ms hop; Live uses the same filters with equivalent time windows,
+// even when a browser timer is a little early or late.
+function seriesStep(series,fallback=.01){
+  if(!series||series.length<2)return fallback;
+  const diffs=[],start=Math.max(1,series.length-80);
+  for(let i=start;i<series.length;i++){
+    const d=series[i].time-series[i-1].time;
+    if(Number.isFinite(d)&&d>.002&&d<.2)diffs.push(d);
+  }
+  if(!diffs.length)return fallback;
+  diffs.sort((a,b)=>a-b);
+  return diffs[Math.floor(diffs.length/2)];
+}
+
+// Shared frame analysis for loaded audio, browser recording and Live practice.
+function analyzePitchFrame(buf,sr,fMin,fMax,time){
+  const energy=rms(buf),voiced=energy>.006;let freq=null,z=0,diff=0;
+  for(let i=1;i<buf.length;i++){
+    if((buf[i]>=0)!==(buf[i-1]>=0))z++;
+    const d=buf[i]-buf[i-1];diff+=d*d;
+  }
+  const zcr=z/Math.max(1,buf.length-1);
+  const hf=energy>1e-8?Math.sqrt(diff/Math.max(1,buf.length-1))/(2*energy):0;
+  if(voiced){try{freq=amdfBest(buf,sr,fMin,fMax);}catch(_){freq=null;}}
+  return {time,freq:(freq&&freq>=fMin&&freq<=fMax)?freq:null,energy,zcr,hf,unvoiced:false,activity:0};
+}
+
 function postMedianSnap(series){
-  const out=series.map(d=>({...d}));const W=10;
+  const out=series.map(d=>({...d}));
+  // ±100 ms: 10 frames offline, about 5 frames in the 20 ms Live stream.
+  const W=Math.max(2,Math.round(.10/seriesStep(series,.01)));
   for(let i=0;i<out.length;i++){
     if(!out[i].freq)continue;
     const win=[];for(let j=Math.max(0,i-W);j<=Math.min(out.length-1,i+W);j++)if(out[j].freq)win.push(out[j].freq);
@@ -224,9 +257,12 @@ function postMedianSnap(series){
 }
 // Light median filter + removal of voiced runs shorter than 6 frames.
 function finalize(data){
-  const out=data.map(d=>({...d}));const src=out.map(d=>d.freq);
-  for(let i=0;i<out.length;i++){if(!src[i])continue;const w=[];for(let j=Math.max(0,i-2);j<=Math.min(out.length-1,i+2);j++)if(src[j])w.push(src[j]);if(w.length>=3){w.sort((a,b)=>a-b);out[i].freq=w[Math.floor(w.length/2)];}}
-  let i=0;while(i<out.length){if(!out[i].freq){i++;continue;}let j=i;while(j<out.length&&out[j].freq)j++;if(j-i<6)for(let k=i;k<j;k++)out[k].freq=null;i=j;}
+  const out=data.map(d=>({...d})),src=out.map(d=>d.freq),step=seriesStep(data,.01);
+  // ±20 ms median: radius 2 offline and radius 1 at Live's 20 ms cadence.
+  const radius=Math.max(1,Math.round(.02/step));
+  for(let i=0;i<out.length;i++){if(!src[i])continue;const w=[];for(let j=Math.max(0,i-radius);j<=Math.min(out.length-1,i+radius);j++)if(src[j])w.push(src[j]);if(w.length>=3){w.sort((a,b)=>a-b);out[i].freq=w[Math.floor(w.length/2)];}}
+  // Remove voiced bursts shorter than 60 ms, independent of sample cadence.
+  let i=0;while(i<out.length){if(!out[i].freq){i++;continue;}let j=i;while(j<out.length&&out[j].freq)j++;const runDur=(out[j-1].time-out[i].time)+step;if(runDur<.0595)for(let k=i;k<j;k++)out[k].freq=null;i=j;}
   return out;
 }
 
@@ -262,7 +298,9 @@ function restore(series,vals,wasNull){return series.map((d,i)=>({...d,freq:wasNu
 //      across gaps. Kept on purpose so you can SEE how much it flattens jumps. ──
 function smoothLoess(series){
   const {interp,wasNull,ok}=interpGaps(series);if(!ok)return series;
-  const n=interp.length,span=9; // window radius in frames
+  // ±90 ms: keeps the established offline result and the same temporal amount
+  // of smoothing in Live, whose samples arrive less frequently.
+  const n=interp.length,span=Math.max(2,Math.round(.09/seriesStep(series,.01)));
   const out=new Array(n);
   for(let i=0;i<n;i++){
     let sw=0,swx=0,swy=0,swxx=0,swxy=0;
@@ -293,16 +331,13 @@ function analyzePitch(ch,sr,done){
   function chunk(){
     const end=Math.min(fr+120,total);
     for(;fr<end;fr++){
-      const st=fr*hs,seg=ch.slice(st,st+fs),e=rms(seg),v=e>0.006;let f=null,z=0,diff=0;
-      for(let i=1;i<seg.length;i++){if((seg[i]>=0)!==(seg[i-1]>=0))z++;const d=seg[i]-seg[i-1];diff+=d*d;}
-      const zcr=z/Math.max(1,seg.length-1),hf=e>1e-8?Math.sqrt(diff/Math.max(1,seg.length-1))/(2*e):0;
-      if(v){try{f=amdfBest(seg,sr,fMin,fMax);}catch(e){f=null;}}
-      data.push({time:(st+fs/2)/sr,freq:(f&&f>=fMin&&f<=fMax)?f:null,energy:e,zcr,hf,unvoiced:false,activity:0});
+      const st=fr*hs,seg=ch.slice(st,st+fs);
+      data.push(analyzePitchFrame(seg,sr,fMin,fMax,(st+fs/2)/sr));
     }
     $('pf').style.width=(fr/total*100)+'%';
     if(fr<total){requestAnimationFrame(chunk);return;}
     $('pb').style.display='none';$('pf').style.width='0%';
-    done(markVoicelessActivity(finalize(postMedianSnap(data))));
+    done(cleanPitchSeries(data));
   }
   chunk();
 }
@@ -325,6 +360,10 @@ function markVoicelessActivity(series){
   for(let i=1;i<out.length-1;i++)if(!out[i].unvoiced&&out[i-1].unvoiced&&out[i+1].unvoiced){out[i].unvoiced=true;out[i].activity=(out[i-1].activity+out[i+1].activity)/2;}
   let i=0;while(i<out.length){if(!out[i].unvoiced){i++;continue;}let j=i;while(j<out.length&&out[j].unvoiced)j++;if(j-i<2)for(let k=i;k<j;k++){out[k].unvoiced=false;out[k].activity=0;}i=j;}
   return out;
+}
+
+function cleanPitchSeries(series){
+  return markVoicelessActivity(finalize(postMedianSnap(series)));
 }
 
 // End the graph shortly after the final speech event. Up to 600 ms of
@@ -363,8 +402,8 @@ const S={tab:'analyze',
   anWave:null,anDur:0,anGraphDur:0,anRaw:null,anSmooth:[],anAudio:null,anSr:0,
   refWave:null,refDur:0,refGraphDur:0,refRaw:null,refSmooth:[],refAudio:null,refSr:0,
   recWave:null,recDur:0,recGraphDur:0,recRaw:null,recSmooth:[],recAudio:null,recSr:0,
-  raf:null,isRec:false,mr:null,chunks:[],micStream:null,micCtx:null,micAnalyser:null,micGain:null,micBuf:null,micSr:0,
-  live:false,liveData:[],liveT0:0,liveRaf:null};
+  raf:null,isRec:false,forceNativeCapture:false,mr:null,chunks:[],micStream:null,micCtx:null,micAnalyser:null,micGain:null,micBuf:null,micSr:0,
+  live:false,liveData:[],liveT0:0,liveTimer:null,liveLastDraw:0};
 
 // ════ DRAWING — sliding 2s window, plain clean line (smoothing does the work) ════
 const PAD={l:44,t:16,r:12,b:22};
@@ -467,35 +506,46 @@ function drawOneOverview(canvasId,wave,sr,fullDur,cur,color){
 //   your contour scroll, without the record→analyse→repeat cycle. ════
 async function toggleLive(){
   if(S.live){stopLive();return;}
+  if(!canRecordDirectly()){
+    alert('Live practice needs microphone access from a secure HTTPS page. You can still use Record in Compare mode with your device recorder.');
+    return;
+  }
   try{
     await getMic();
     if(S.micCtx&&S.micCtx.state==='suspended'){try{await S.micCtx.resume();}catch(_){}}
-    S.liveData=[];S.liveT0=performance.now();S.live=true;
+    S.liveData=[];S.liveT0=performance.now();S.liveLastDraw=0;S.live=true;
     $('liveBtn').classList.add('on');$('liveBtn').textContent='● Stop live';
     document.querySelectorAll('#panel-analyze .empty').forEach(e=>e.style.display='none');
     liveLoop();
   }catch{alert('No microphone access');}
 }
 function stopLive(){
-  S.live=false;if(S.liveRaf){cancelAnimationFrame(S.liveRaf);S.liveRaf=null;}
+  S.live=false;if(S.liveTimer){clearTimeout(S.liveTimer);S.liveTimer=null;}
   const b=$('liveBtn');if(b){b.classList.remove('on');b.textContent='● Live practice';}
 }
+const LIVE_HOP_MS=20;
 function liveLoop(){
   if(!S.live)return;
-  if(!S.micAnalyser){S.liveRaf=requestAnimationFrame(liveLoop);return;}
+  const cycleStart=performance.now();
+  if(!S.micAnalyser){S.liveTimer=setTimeout(liveLoop,LIVE_HOP_MS);return;}
   S.micAnalyser.getFloatTimeDomainData(S.micBuf);
-  const e=rms(S.micBuf),fMin=parseInt($('fMin').value),fMax=parseInt($('fMax').value);
-  let f=null;if(e>0.006){try{f=amdfBest(S.micBuf,S.micSr,fMin,fMax);}catch(_){f=null;}}
-  const t=(performance.now()-S.liveT0)/1000;
-  S.liveData.push({time:t,freq:(f&&f>=fMin&&f<=fMax)?f:null});
-  const cutoff=t-6;while(S.liveData.length&&S.liveData[0].time<cutoff)S.liveData.shift();
-  drawLive();
-  S.liveRaf=requestAnimationFrame(liveLoop);
+  const fMin=parseInt($('fMin').value),fMax=parseInt($('fMax').value);
+  // Timestamp the centre of the same 2048-sample window used by offline analysis.
+  const halfWindow=S.micBuf.length/(2*S.micSr);
+  const t=Math.max(0,(cycleStart-S.liveT0)/1000-halfWindow);
+  S.liveData.push(analyzePitchFrame(S.micBuf,S.micSr,fMin,fMax,t));
+  const keepSec=Math.max(6,parseFloat($('winSec').value)+.5);
+  const cutoff=t-keepSec;while(S.liveData.length&&S.liveData[0].time<cutoff)S.liveData.shift();
+  // Drawing at 25 fps is smooth while leaving the microphone analysis enough CPU.
+  if(cycleStart-S.liveLastDraw>=40){drawLive();S.liveLastDraw=cycleStart;}
+  if(S.live){const elapsed=performance.now()-cycleStart;S.liveTimer=setTimeout(liveLoop,Math.max(4,LIVE_HOP_MS-elapsed));}
 }
 function drawLive(){
-  // pitch mirror: your live pitch (smoothed with the same production method)
-  // scrolls across the Practice graph in a moving window while you speak.
-  let smoothed;try{smoothed=SMOOTHERS[0].fn(S.liveData.map(d=>({...d})));}catch(_){smoothed=S.liveData.map(d=>({...d}));}
+  // The real-time path now uses the same correction, cleanup and production
+  // smoother as loaded and recorded audio; their time windows adapt to cadence.
+  const raw=S.liveData.map(d=>({...d}));let cleaned,smoothed;
+  try{cleaned=cleanPitchSeries(raw);}catch(_){cleaned=raw;}
+  try{smoothed=SMOOTHERS[0].fn(cleaned);}catch(_){smoothed=cleaned;}
   const last=S.liveData.length?S.liveData[S.liveData.length-1].time:0;
   const dur=Math.max(last,parseFloat($('winSec').value));
   drawGraph('an-cv-0',[{data:smoothed,color:'#00e5ff'}],dur,last);
@@ -557,12 +607,25 @@ function analyzeSegment(ch,sr,target){
 
 // ════ RECORDING (target = an or rec) ════
 // Keep the mic stream open after the first grant so the browser doesn't re-prompt each time.
+function canRecordDirectly(){
+  return !!(window.isSecureContext&&navigator.mediaDevices&&typeof navigator.mediaDevices.getUserMedia==='function'&&typeof MediaRecorder!=='undefined');
+}
+function openDeviceRecorder(target){
+  const input=$(target+'CaptureFile');
+  if(!input){alert('Recording is unavailable in this browser. You can load an audio file instead.');return;}
+  input.value='';
+  input.click();
+}
 async function getMic(){
   if(S.micStream&&S.micStream.active&&S.micAnalyser)return S.micStream;
-  // Let the browser/device use its own default mic processing (AGC, echo
-  // cancellation, noise suppression). Forcing these off used to sound bad on
-  // some devices whose hardware relies on them to avoid clipping/low volume.
-  S.micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  // Speech-cleanup algorithms can mistake /s/, /f/, /sh/ and stop releases for
+  // background noise. Ask for the least processed microphone signal available.
+  S.micStream=await navigator.mediaDevices.getUserMedia({audio:{
+    echoCancellation:false,
+    noiseSuppression:false,
+    autoGainControl:false,
+    channelCount:1
+  }});
   const ac=new(window.AudioContext||window.webkitAudioContext)();
   if(ac.state==='suspended'){try{await ac.resume();}catch(_){}}
   const src=ac.createMediaStreamSource(S.micStream);
@@ -582,6 +645,9 @@ function recorderOptions(){
   const options={audioBitsPerSecond:160000};if(mimeType)options.mimeType=mimeType;return options;
 }
 async function startRec(target){
+  // Android opens downloaded HTML files with a content:// address. Browsers block
+  // direct microphone access there, so use the phone's recorder as a safe fallback.
+  if(S.forceNativeCapture||!canRecordDirectly()){openDeviceRecorder(target);return;}
   try{
     const stream=await getMic();
     S.chunks=[];let mr;try{mr=new MediaRecorder(stream,recorderOptions());}catch(_){mr=new MediaRecorder(stream);}S.mr=mr;S.isRec=true;
@@ -591,7 +657,12 @@ async function startRec(target){
     const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');
     if(recBtn)recBtn.classList.add('live');
     if(recTxt)recTxt.textContent='Stop';
-  }catch{alert('Recording is unavailable or microphone access was denied.');}
+  }catch{
+    S.forceNativeCapture=true;
+    const recBtn=$(target+'RecBtn');
+    if(recBtn)recBtn.title='Record with your device recorder';
+    alert('Direct microphone access was not available. Tap Record again to use your device recorder.');
+  }
 }
 function stopRec(target){
   if(S.mr&&S.isRec){S.isRec=false;S.mr.stop();const recBtn=$(target+'RecBtn'),recTxt=$(target+'RecTxt');if(recBtn)recBtn.classList.remove('live');if(recTxt)recTxt.textContent='Record';}
@@ -634,17 +705,30 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>swit
 // several loads decoding could silently start failing.
 let decodeCtx=null;
 function getDecodeCtx(){if(!decodeCtx)decodeCtx=new(window.AudioContext||window.webkitAudioContext)();return decodeCtx;}
-function wireFileInput(id,target){
+async function loadAudioFile(file,target,errorMessage){
+  try{
+    const ctx=getDecodeCtx();
+    if(ctx.state==='suspended'){try{await ctx.resume();}catch(_){}}
+    const buf=await file.arrayBuffer();const ab=await ctx.decodeAudioData(buf);processBuffer(ab,target);return true;
+  }catch(_){alert(errorMessage);return false;}
+}
+function wireFileInput(id,target,errorMessage='Unsupported format'){
   const input=$(id);
   if(!input)return;
   input.addEventListener('change',async e=>{
     const f=e.target.files[0];if(!f)return;
-    try{const buf=await f.arrayBuffer();const ab=await getDecodeCtx().decodeAudioData(buf);processBuffer(ab,target);}
-    catch{alert('Unsupported format');}
+    const isCapture=id==='recCaptureFile',recBtn=isCapture?$('recRecBtn'):null,recTxt=isCapture?$('recRecTxt'):null;
+    const wasDisabled=recBtn?recBtn.disabled:false;
+    if(recBtn)recBtn.disabled=true;
+    if(recTxt)recTxt.textContent='Processing…';
+    await loadAudioFile(f,target,errorMessage);
+    if(recBtn)recBtn.disabled=wasDisabled;
+    if(recTxt)recTxt.textContent='Record';
     e.target.value='';
   });
 }
 wireFileInput('anFile','an');wireFileInput('refFile','ref');
+wireFileInput('recCaptureFile','rec','This recording could not be decoded on this device. Try another audio format.');
 $('recRecBtn').addEventListener('click',()=>S.isRec?stopRec('rec'):startRec('rec'));
 $('viewFMin').addEventListener('input',function(){if(parseInt(this.value)>=parseInt($('viewFMax').value)){$('viewFMax').value=Math.min(500,parseInt(this.value)+20);$('viewFMaxV').textContent=$('viewFMax').value+'Hz';}$('viewFMinV').textContent=this.value+'Hz';redraw();});
 $('viewFMax').addEventListener('input',function(){if(parseInt(this.value)<=parseInt($('viewFMin').value)){$('viewFMin').value=Math.max(50,parseInt(this.value)-20);$('viewFMinV').textContent=$('viewFMin').value+'Hz';}$('viewFMaxV').textContent=this.value+'Hz';redraw();});
@@ -654,12 +738,12 @@ window.addEventListener('resize',()=>setTimeout(()=>{drawActive();drawOverview()
 // ════ BOOT ════
 (function checkSupport(){
   const hasAudioCtx=!!(window.AudioContext||window.webkitAudioContext);
-  const hasMic=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
-  const hasRecorder=typeof MediaRecorder!=='undefined';
   if(!hasAudioCtx){
     document.querySelectorAll('.empty').forEach(e=>{e.textContent='Your browser does not support the Web Audio API. Try an up-to-date Chrome, Edge or Firefox.';});
-  } else if(!hasMic||!hasRecorder){
-    [...document.querySelectorAll('.btn-rec')].forEach(b=>{b.disabled=true;b.title='Recording is unavailable in this browser — you can load a file instead';});
+    [...document.querySelectorAll('.btn-rec,.live-btn')].forEach(b=>{b.disabled=true;});
+  } else if(!canRecordDirectly()){
+    [...document.querySelectorAll('.btn-rec')].forEach(b=>{b.title='Record with your device recorder';b.setAttribute('aria-label','Record with your device recorder');});
+    const liveBtn=$('liveBtn');if(liveBtn){liveBtn.disabled=true;liveBtn.title='Live practice requires a secure HTTPS page';}
   }
 })();
 buildAnalyzeStack();
